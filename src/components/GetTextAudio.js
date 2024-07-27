@@ -1,5 +1,4 @@
 import React, { Component, createRef } from 'react';
-import axios from 'axios';
 import Api from "../Api";
 import './GetTextAudio.css';
 
