@@ -1,5 +1,6 @@
 import React, { Component, createRef } from 'react';
 import axios from 'axios';
+import Api from "../Api";
 import './GetTextAudio.css';
 
 class GetTextAudio extends Component {
@@ -43,7 +44,7 @@ class GetTextAudio extends Component {
     
     console.log(formData)
     this.setState({ isUploading: true });
-    axios.post('http://localhost:3203/audio/upload', formData, {
+    Api.post('audio/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -71,7 +72,7 @@ class GetTextAudio extends Component {
 
     console.log(uploadedFile)
     this.setState({ isProcessing: true });
-    axios.post('http://localhost:3203/audio/transcribe', { filename: uploadedFile, mode: accuracyMode })
+    Api.post('audio/transcribe', { filename: uploadedFile, mode: accuracyMode })
     .then(response => {
       const { transcription_filename } = response.data;
       this.setState({ transcription_filename })
@@ -85,7 +86,7 @@ class GetTextAudio extends Component {
 
   checkForTranscriptionFile = (transcription_filename) => {
     const checkFile = () => {
-      axios.get(`http://localhost:3203/audio/transcription?filename=${transcription_filename}`)
+      Api.get(`audio/transcription?filename=${transcription_filename}`)
         .then((response) => {
           const { transcription } = response.data;
           if (transcription) {
