@@ -10,6 +10,7 @@ class GetTextAudio extends Component {
       uploadedFile: null,
       transcription: null,
       transcription_filename: null,
+      downloadale: null,
       error: null,
       isUploading: false,
       isProcessing: false,
@@ -21,6 +22,7 @@ class GetTextAudio extends Component {
     this.handleFileChange = this.handleFileChange.bind(this);
     this.handleUpload = this.handleUpload.bind(this);
     this.handleTranscription = this.handleTranscription.bind(this);
+    this.handleModeChange = this.handleModeChange.bind(this);
   }
 
   handleFileChange(event) {
@@ -33,7 +35,6 @@ class GetTextAudio extends Component {
   
   handleUpload() {
     const { selectedFile } = this.state;
-    console.log(selectedFile)
     if (!selectedFile) {
       this.setState({ error: 'Please select an audio file to upload.' });
       return;
@@ -41,7 +42,6 @@ class GetTextAudio extends Component {
     const formData = new FormData();
     formData.append('file', selectedFile);
     
-    console.log(formData)
     this.setState({ isUploading: true });
     Api.post('audio/upload', formData, {
       headers: {
@@ -49,9 +49,10 @@ class GetTextAudio extends Component {
       }
     })
     .then(response => {
-      console.log(response.data.filename)
       this.setState({ uploadedFile: response.data.filename, error: null, isUploading: false }, () => {
+        // const url = URL.createObjectURL(new Blob([response.data.file_data], { type: 'audio/mpeg' }));
         // if (this.audioRef.current) {
+        //   this.audioRef.current.src = url;
         //   this.audioRef.current.load();
         //   this.audioRef.current.play();
         // }
@@ -84,12 +85,12 @@ class GetTextAudio extends Component {
   }
 
   checkForTranscriptionFile = (transcription_filename) => {
-    const checkFile = () => {
+    const checkTranscriptionFile = () => {
       Api.get(`audio/transcription?filename=${transcription_filename}`)
         .then((response) => {
           const { transcription } = response.data;
           if (transcription) {
-            this.setState({ transcription, isProcessing: false});
+            this.setState({ transcription, isProcessing: false, downloadale: new Blob([transcription], {type: 'text/plain'})});
             clearInterval(this.fileCheckInterval);
           }
         })
@@ -99,12 +100,12 @@ class GetTextAudio extends Component {
         });
     };
 
-    this.fileCheckInterval = setInterval(checkFile, 5000); // Poll every 5 seconds
-    checkFile(); // Initial call
+    this.fileCheckInterval = setInterval(checkTranscriptionFile, 5000); // Poll every 5 seconds
+    checkTranscriptionFile(); // Initial call
   };
 
   render() {
-    const { selectedFile, uploadedFile, transcription_filename, transcription, error, isUploading, isProcessing, accuracyMode } = this.state;
+    const { selectedFile, uploadedFile, transcription_filename, transcription, downloadale, error, isUploading, isProcessing, accuracyMode } = this.state;
 
     return (
       <div className="container">
@@ -122,10 +123,10 @@ class GetTextAudio extends Component {
           <div>
             <p>Uploaded Audio: {selectedFile.name}</p>
             <div className="audio-container">
-              <audio controls >
-                <source src={require(`../../tmp/uploads/${uploadedFile}`)} type="audio/mpeg" />
+              {/* <audio controls ref={this.audioRef} >
+                <source type="audio/mpeg" />
                 Your browser does not support the audio element.
-              </audio>
+              </audio> */}
               <div className="combo-box">
                 <h3>Select the accuracy mode</h3>
                 <select value={accuracyMode} onChange={this.handleModeChange}>
@@ -145,7 +146,7 @@ class GetTextAudio extends Component {
         {transcription && (
           <div className="transcription">
             <h3>Transcription Ready:</h3>
-            <a href={require(`../../tmp/transcriptions/${transcription_filename}`)} download className="button">
+            <a href={URL.createObjectURL(downloadale)} download={transcription_filename} className="button">
               Download Transcription
             </a>
             <textarea readOnly value={transcription} />
