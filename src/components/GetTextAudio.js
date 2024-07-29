@@ -9,14 +9,14 @@ class GetTextAudio extends Component {
       selectedFile: null,
       uploadedFile: null,
       transcription: null,
-      transcription_filename: null,
-      downloadale: null,
+      transcriptionFilename: null,
+      downloadaleText: null,
       error: null,
       isUploading: false,
       isProcessing: false,
       accuracyMode: 'medium',
     };
-    this.audioRef = createRef();
+    // this.audioRef = createRef();
     this.fileCheckInterval = null;
 
     this.handleFileChange = this.handleFileChange.bind(this);
@@ -49,13 +49,10 @@ class GetTextAudio extends Component {
       }
     })
     .then(response => {
-      this.setState({ uploadedFile: response.data.filename, error: null, isUploading: false }, () => {
-        // const url = URL.createObjectURL(new Blob([response.data.file_data], { type: 'audio/mpeg' }));
-        // if (this.audioRef.current) {
-        //   this.audioRef.current.src = url;
-        //   this.audioRef.current.load();
-        //   this.audioRef.current.play();
-        // }
+      const uploadedFile = response.data.filename;
+      console.log(uploadedFile);
+      this.setState({ uploadedFile, error: null, isUploading: false }, () => {
+        this.getAudioData(uploadedFile);
       });
     })
     .catch(error => {
@@ -74,9 +71,9 @@ class GetTextAudio extends Component {
     this.setState({ isProcessing: true });
     Api.post('audio/transcribe', { filename: uploadedFile, mode: accuracyMode })
     .then(response => {
-      const { transcription_filename } = response.data;
-      this.setState({ transcription_filename })
-      this.checkForTranscriptionFile(transcription_filename);
+      const transcriptionFilename = response.data.transcription_filename;
+      this.setState({ transcriptionFilename });
+      this.getTranscriptionData(transcriptionFilename);
       
     })
     .catch(error => {
@@ -84,28 +81,45 @@ class GetTextAudio extends Component {
     });
   }
 
-  checkForTranscriptionFile = (transcription_filename) => {
+  getTranscriptionData = (transcriptionFilename) => {
     const checkTranscriptionFile = () => {
-      Api.get(`audio/transcription?filename=${transcription_filename}`)
-        .then((response) => {
-          const { transcription } = response.data;
-          if (transcription) {
-            this.setState({ transcription, isProcessing: false, downloadale: new Blob([transcription], {type: 'text/plain'})});
-            clearInterval(this.fileCheckInterval);
-          }
-        })
-        .catch((error) => {
-          this.setState({ error: 'Error checking transcription file. Please try again.', isProcessing: false });
+      Api.get(`audio/transcription?filename=${transcriptionFilename}`)
+      .then((response) => {
+        const { transcription } = response.data;
+        if (transcription) {
+          this.setState({ transcription, isProcessing: false, downloadaleText: new Blob([transcription], {type: 'text/plain'})});
           clearInterval(this.fileCheckInterval);
-        });
+        }
+      })
+      .catch((error) => {
+        this.setState({ error: 'Error checking transcription file. Please try again.', isProcessing: false });
+        clearInterval(this.fileCheckInterval);
+      });
     };
 
-    this.fileCheckInterval = setInterval(checkTranscriptionFile, 5000); // Poll every 5 seconds
-    checkTranscriptionFile(); // Initial call
+    this.fileCheckInterval = setInterval(checkTranscriptionFile, 5000);
+    checkTranscriptionFile();
+  };
+
+  getAudioData = (audioFilename) => {
+    Api.get(`audio/data?filename=${audioFilename}`)
+    .then((response) => {
+      // console.log(response.data)
+      // const audioData = URL.createObjectURL(new Blob([response.data], { type: 'audio/mpeg' }));
+      // console.log(this.audioRef)
+      // if (this.audioRef.current) {
+      //   this.audioRef.current.src = audioData;
+      //   this.audioRef.current.load();
+      //   this.audioRef.current.play();
+      // }
+    })
+    .catch((error) => {
+      this.setState({ error: 'Error checking transcription file. Please try again.', isProcessing: false });
+    });
   };
 
   render() {
-    const { selectedFile, uploadedFile, transcription_filename, transcription, downloadale, error, isUploading, isProcessing, accuracyMode } = this.state;
+    const { selectedFile, uploadedFile, transcriptionFilename, transcription, downloadaleText, error, isUploading, isProcessing, accuracyMode } = this.state;
 
     return (
       <div className="container">
@@ -146,7 +160,7 @@ class GetTextAudio extends Component {
         {transcription && (
           <div className="transcription">
             <h3>Transcription Ready:</h3>
-            <a href={URL.createObjectURL(downloadale)} download={transcription_filename} className="button">
+            <a href={URL.createObjectURL(downloadaleText)} download={transcriptionFilename} className="button">
               Download Transcription
             </a>
             <textarea readOnly value={transcription} />
