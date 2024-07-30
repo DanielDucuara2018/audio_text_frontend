@@ -1,4 +1,4 @@
-import React, { Component, createRef } from "react";
+import React, { Component } from "react"; // createRef
 import Api from "../Api";
 import "./GetTextAudio.css";
 
@@ -10,6 +10,7 @@ class GetTextAudio extends Component {
       uploadedFile: null,
       transcription: null,
       transcriptionFilename: null,
+      pidProccess: null,
       downloadaleText: null,
       errorUploading: null,
       errorTranscribing: null,
@@ -24,10 +25,31 @@ class GetTextAudio extends Component {
     this.handleUpload = this.handleUpload.bind(this);
     this.handleTranscription = this.handleTranscription.bind(this);
     this.handleModeChange = this.handleModeChange.bind(this);
+    this.handleBeforeUnload = this.handleBeforeUnload.bind(this);
+  }
+
+  componentDidMount() {
+    window.addEventListener("beforeunload", this.handleBeforeUnload);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("beforeunload", this.handleBeforeUnload);
+  }
+
+  handleBeforeUnload(event) {
+    console.log("Terminating old transcription");
+    const pid = localStorage.getItem("pid");
+    if (pid) {
+      this.terminateTranscription(pid);
+    }
   }
 
   handleFileChange(event) {
-    this.setState({ selectedFile: event.target.files[0] });
+    this.setState({
+      selectedFile: event.target.files[0],
+      errorUploading: null,
+      errorTranscribing: null,
+    });
   }
 
   handleModeChange(event) {
@@ -53,11 +75,10 @@ class GetTextAudio extends Component {
     })
       .then((response) => {
         const uploadedFile = response.data.filename;
-        console.log(uploadedFile);
         this.setState(
           { uploadedFile, errorUploading: null, isUploading: false },
           () => {
-            this.getAudioData(uploadedFile);
+            // this.getAudioData(uploadedFile);
           }
         );
       })
@@ -81,14 +102,25 @@ class GetTextAudio extends Component {
     Api.post("audio/transcribe", { filename: uploadedFile, mode: accuracyMode })
       .then((response) => {
         const transcriptionFilename = response.data.transcription_filename;
-        this.setState({ transcriptionFilename, errorTranscribing: null });
+        const pid = response.data.pid_process;
+        this.setState({
+          transcriptionFilename,
+          errorTranscribing: null,
+          pidProccess: pid,
+        });
         this.getTranscriptionData(transcriptionFilename);
+        localStorage.setItem("pid", pid);
+        console.log(pid);
       })
       .catch((error) => {
         this.setState({
           errorTranscribing: "Error getting transcription. Please try again.",
           isProcessing: false,
         });
+        const pid = this.pidProccess;
+        if (pid) {
+          this.terminateTranscription(pid);
+        }
       });
   }
 
@@ -106,6 +138,7 @@ class GetTextAudio extends Component {
                 type: "text/plain",
               }),
             });
+            localStorage.clear();
             clearInterval(this.fileCheckInterval);
           }
         })
@@ -115,6 +148,11 @@ class GetTextAudio extends Component {
               "Error checking transcription file. Please try again.",
             isProcessing: false,
           });
+          const pid = this.pidProccess;
+          if (pid) {
+            this.terminateTranscription(pid);
+          }
+          localStorage.clear();
           clearInterval(this.fileCheckInterval);
         });
     };
@@ -139,6 +177,19 @@ class GetTextAudio extends Component {
         this.setState({
           errorUploading: "Error getting audio data to play it.",
           isProcessing: false,
+        });
+      });
+  };
+
+  terminateTranscription = (pid) => {
+    console.log(pid);
+    Api.post("audio/terminate", { pid: pid })
+      .then((response) => {
+        console.log("Transcription killed succesfully");
+      })
+      .catch((error) => {
+        this.setState({
+          errorTranscribing: "Error Killing transcription process",
         });
       });
   };
