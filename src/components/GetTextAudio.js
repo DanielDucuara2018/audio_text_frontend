@@ -138,7 +138,6 @@ class GetTextAudio extends Component {
                 type: "text/plain",
               }),
             });
-            localStorage.clear();
             clearInterval(this.fileCheckInterval);
           }
         })
@@ -152,7 +151,6 @@ class GetTextAudio extends Component {
           if (pid) {
             this.terminateTranscription(pid);
           }
-          localStorage.clear();
           clearInterval(this.fileCheckInterval);
         });
     };
@@ -186,6 +184,7 @@ class GetTextAudio extends Component {
     Api.post("audio/terminate", { pid: pid })
       .then((response) => {
         console.log("Transcription killed succesfully");
+        localStorage.clear();
       })
       .catch((error) => {
         this.setState({
