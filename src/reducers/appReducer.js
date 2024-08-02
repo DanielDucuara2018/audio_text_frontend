@@ -12,7 +12,7 @@ import {
     SET_IS_PROCESSING,
     SET_ACCURACY_MODE,
     CLEAR_STATE,
-  } from '../actions/getTextAudioActions';
+  } from '../actions/appActions';
   
   const initialState = {
     selectedFile: null,
@@ -29,7 +29,7 @@ import {
     accuracyMode: 'medium',
   };
   
-  const getTextAudioReducer = (state = initialState, action) => {
+  const appReducer = (state = initialState, action) => {
     switch (action.type) {
       case SET_SELECTED_FILE:
         return { ...state, selectedFile: action.payload };
@@ -62,4 +62,4 @@ import {
     }
   };
   
-  export default getTextAudioReducer;
+  export default appReducer;

@@ -1,8 +1,7 @@
 import { createStore, combineReducers } from 'redux';
-import { composeWithDevTools } from '@redux-devtools/extension';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage'; 
-import getTextAudioReducer from './reducers/getTextAudioReducer';
+import appReducer from './reducers/appReducer';
 
 // Configuration object for redux-persist
 const persistConfig = {
@@ -12,10 +11,10 @@ const persistConfig = {
 
 // Combine reducers and wrap them with persistReducer
 const rootReducer = combineReducers({
-  getTextAudio: persistReducer(persistConfig, getTextAudioReducer),
+  appRootReducer: persistReducer(persistConfig, appReducer),
 });
 
-const store = createStore(rootReducer, composeWithDevTools());
+const store = createStore(rootReducer);
 const persistor = persistStore(store);
 
 export { store, persistor };

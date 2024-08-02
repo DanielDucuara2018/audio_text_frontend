@@ -14,7 +14,7 @@ import {
   setIsProcessing,
   setAccuracyMode,
   clearState,
-} from '../actions/getTextAudioActions';
+} from '../actions/appActions';
 import Api from '../Api';
 import './GetTextAudio.css';
 
@@ -223,18 +223,18 @@ class GetTextAudio extends Component {
 }
 
 const mapStateToProps = (state) => ({
-  selectedFile: state.getTextAudio.selectedFile,
-  selectedFilename: state.getTextAudio.selectedFilename,
-  uploadedFile: state.getTextAudio.uploadedFile,
-  transcription: state.getTextAudio.transcription,
-  transcriptionFilename: state.getTextAudio.transcriptionFilename,
-  pidProcess: state.getTextAudio.pidProcess,
-  downloadableText: state.getTextAudio.downloadableText,
-  errorUploading: state.getTextAudio.errorUploading,
-  errorTranscribing: state.getTextAudio.errorTranscribing,
-  isUploading: state.getTextAudio.isUploading,
-  isProcessing: state.getTextAudio.isProcessing,
-  accuracyMode: state.getTextAudio.accuracyMode,
+  selectedFile: state.appRootReducer.selectedFile,
+  selectedFilename: state.appRootReducer.selectedFilename,
+  uploadedFile: state.appRootReducer.uploadedFile,
+  transcription: state.appRootReducer.transcription,
+  transcriptionFilename: state.appRootReducer.transcriptionFilename,
+  pidProcess: state.appRootReducer.pidProcess,
+  downloadableText: state.appRootReducer.downloadableText,
+  errorUploading: state.appRootReducer.errorUploading,
+  errorTranscribing: state.appRootReducer.errorTranscribing,
+  isUploading: state.appRootReducer.isUploading,
+  isProcessing: state.appRootReducer.isProcessing,
+  accuracyMode: state.appRootReducer.accuracyMode,
 });
 
 const mapDispatchToProps = {
