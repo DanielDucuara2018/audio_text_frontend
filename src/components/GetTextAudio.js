@@ -1,4 +1,4 @@
-import React, { Component } from "react"; // createRef
+import React, { Component } from "react";
 import Api from "../Api";
 import "./GetTextAudio.css";
 
@@ -18,7 +18,6 @@ class GetTextAudio extends Component {
       isProcessing: false,
       accuracyMode: "medium",
     };
-    // this.audioRef = createRef();
     this.fileCheckInterval = null;
 
     this.handleFileChange = this.handleFileChange.bind(this);
@@ -75,12 +74,7 @@ class GetTextAudio extends Component {
     })
       .then((response) => {
         const uploadedFile = response.data.filename;
-        this.setState(
-          { uploadedFile, errorUploading: null, isUploading: false },
-          () => {
-            // this.getAudioData(uploadedFile);
-          }
-        );
+        this.setState({ uploadedFile, errorUploading: null, isUploading: false });
       })
       .catch((error) => {
         this.setState({
@@ -159,26 +153,6 @@ class GetTextAudio extends Component {
     checkTranscriptionFile();
   };
 
-  getAudioData = (audioFilename) => {
-    Api.get(`audio/data?filename=${audioFilename}`)
-      .then((response) => {
-        // console.log(response.data)
-        // const audioData = URL.createObjectURL(new Blob([response.data], { type: 'audio/mpeg' }));
-        // console.log(this.audioRef)
-        // if (this.audioRef.current) {
-        //   this.audioRef.current.src = audioData;
-        //   this.audioRef.current.load();
-        //   this.audioRef.current.play();
-        // }
-      })
-      .catch((error) => {
-        this.setState({
-          errorUploading: "Error getting audio data to play it.",
-          isProcessing: false,
-        });
-      });
-  };
-
   terminateTranscription = (pid) => {
     console.log(pid);
     Api.post("audio/terminate", { pid: pid })
@@ -206,7 +180,6 @@ class GetTextAudio extends Component {
       isProcessing,
       accuracyMode,
     } = this.state;
-
     return (
       <div className="container">
         <h2>Transcribe Audio</h2>
@@ -231,10 +204,6 @@ class GetTextAudio extends Component {
           <div>
             <p>Uploaded Audio: {selectedFile.name}</p>
             <div className="audio-container">
-              {/* <audio controls ref={this.audioRef} >
-                <source type="audio/mpeg" />
-                Your browser does not support the audio element.
-              </audio> */}
               <div className="combo-box">
                 <h3>Select the accuracy mode</h3>
                 <select value={accuracyMode} onChange={this.handleModeChange}>
