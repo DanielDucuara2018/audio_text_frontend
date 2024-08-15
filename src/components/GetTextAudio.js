@@ -116,6 +116,7 @@ class GetTextAudio extends Component {
           if (transcription) {
             this.props.setTranscription(transcription);
             this.props.setIsProcessing(false);
+            this.props.setPidProcess(null);
             this.props.setDownloadableText(URL.createObjectURL(new Blob([transcription], { type: 'text/plain' })));
 
             clearInterval(this.fileCheckInterval);
@@ -148,6 +149,11 @@ class GetTextAudio extends Component {
   };
 
   clearAllState() {
+    const pid = this.props.pidProcess;
+    if (pid) {
+      this.terminateTranscription(pid);
+    }
+    clearInterval(this.fileCheckInterval);
     this.props.clearState();
   }
 
@@ -205,7 +211,14 @@ class GetTextAudio extends Component {
             </div>
           </div>
         )}
-        {isProcessing && <p>Processing audio, please wait...</p>}
+        {isProcessing && (
+          <div>
+            <p>Processing audio, please wait...</p>
+            <button onClick={this.clearAllState}>Cancel</button>
+          </div>
+          )
+        }
+        
         {errorTranscribing && <p className="error">{errorTranscribing}</p>}
         {transcription && (
           <div className="transcription">
