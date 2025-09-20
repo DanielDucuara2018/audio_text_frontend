@@ -4,24 +4,24 @@ This repository contains the front-end component of an Audio-to-Text application
 
 ## Features
 
-* User-friendly interface for uploading audio files
-* Real-time display of transcription results
-* Responsive design suitable for various devices
-* Integration with back-end API for audio processing
+- User-friendly interface for uploading audio files
+- Real-time display of transcription results
+- Responsive design suitable for various devices
+- Integration with back-end API for audio processing
 
 ## Technologies Used
 
-* JavaScript
-* HTML
-* CSS
-* Docker (for development environment)
+- JavaScript
+- HTML
+- CSS
+- Docker (for development environment)
 
 ## Getting Started
 
 ### Prerequisites
 
-* Node.js and npm installed on your machine
-* Docker and Docker Compose (for development setup)
+- Node.js and npm installed on your machine
+- Docker and Docker Compose (for development setup)
 
 ### Installation
 
@@ -48,18 +48,18 @@ This repository contains the front-end component of an Audio-to-Text application
 You can run the application in a development environment using Docker Compose:
 
 ```bash
-docker-compose -f docker-compose.dev.yml up
+docker-compose -f docker-compose.dev.yml up -d --build app_dev
 ```
 
 This will start the development server, and you can access the application at `http://localhost:3000`.
 
 ## Project Structure
 
-* `public/` - Contains static assets and the main HTML file
-* `src/` - Contains the main source code for the React application
-* `resources/` - Contains additional resources and assets
-* `Dockerfile.dev` - Docker configuration for development environment
-* `docker-compose.dev.yml` - Docker Compose configuration for development
+- `public/` - Contains static assets and the main HTML file
+- `src/` - Contains the main source code for the React application
+- `resources/` - Contains additional resources and assets
+- `Dockerfile.dev` - Docker configuration for development environment
+- `docker-compose.dev.yml` - Docker Compose configuration for development
 
 ## Contributing
 

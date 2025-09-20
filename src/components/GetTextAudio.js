@@ -16,136 +16,171 @@ import {
   clearState,
 } from '../actions/appActions';
 import Api from '../Api';
+import axios from 'axios';
 import './GetTextAudio.css';
 
 class GetTextAudio extends Component {
   constructor(props) {
     super(props);
     this.fileCheckInterval = null;
+    this.websocket = null;
+    this.state = {
+      audioPreviewUrl: '',
+      isFileUploaded: false,
+      uploadUrl: '',
+    };
 
     this.handleFileChange = this.handleFileChange.bind(this);
-    this.handleUpload = this.handleUpload.bind(this);
     this.handleTranscription = this.handleTranscription.bind(this);
     this.handleModeChange = this.handleModeChange.bind(this);
-    this.handleAfterload = this.handleAfterload.bind(this);
     this.clearAllState = this.clearAllState.bind(this);
   }
 
-  componentDidMount() {
-    window.addEventListener('load', this.handleAfterload);
-  }
-
   componentWillUnmount() {
-    window.URL.revokeObjectURL(this.props.downloadableText);
-  }
-
-  handleAfterload(event) {
-    const transcriptionFilename = this.props.transcriptionFilename;
-    if (transcriptionFilename) {
-      this.getTranscriptionData(transcriptionFilename);
+    if (this.props.downloadableText) {
+      window.URL.revokeObjectURL(this.props.downloadableText);
+    }
+    if (this.fileCheckInterval) {
+      clearInterval(this.fileCheckInterval);
+    }
+    if (this.websocket) {
+      this.websocket.close();
     }
   }
 
-  handleFileChange(event) {
-    this.props.setSelectedFile(event.target.files[0]);
-    this.props.setErrorUploading(null);
-    this.props.setErrorTranscribing(null);
+  handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      this.props.setIsUploading(true);
+      this.props.setErrorUploading(null);
+      this.setState({ isFileUploaded: false, audioPreviewUrl: '' });
+
+      // 1. Get presigned URL from backend
+      const upload_response = await Api.get("/audio/get_presigned_url", {
+        params: {
+          filename: file.name,
+          content_type: file.type,
+          file_size: file.size
+        }
+      });
+
+      const upload_url = upload_response.data.url;
+
+      // 2. Upload file directly to S3 using presigned URL
+      await axios.put(upload_url, file, {
+        headers: { "Content-Type": file.type },
+      });
+
+      // 3. Create CloudFront URL for audio preview
+      const cloudFrontUrl = `https://d3skpo6i31hl4s.cloudfront.net/${file.name}`;
+
+      // 4. Set file as uploaded and ready for transcription
+      this.props.setSelectedFile(file);
+      this.props.setSelectedFilename(file.name);
+      this.props.setUploadedFile(file.name);
+      this.props.setIsUploading(false);
+      this.setState({ 
+        isFileUploaded: true,
+        audioPreviewUrl: cloudFrontUrl,
+        uploadUrl: upload_url  // Store upload URL for transcription
+      });
+
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || 'Error uploading file. Please try again.';
+      this.props.setErrorUploading(errorMessage);
+      this.props.setIsUploading(false);
+      this.setState({ isFileUploaded: false, audioPreviewUrl: '', uploadUrl: '' });
+    }
   }
 
   handleModeChange(event) {
     this.props.setAccuracyMode(event.target.value);
   }
 
-  handleUpload() {
-    const { selectedFile } = this.props;
-    if (!selectedFile) {
-      this.props.setErrorUploading('Please select an audio file to upload.');
-      return;
-    }
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    this.props.setSelectedFilename(selectedFile.name)
-
-    this.props.setIsUploading(true);
-    Api.post('audio/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-      .then((response) => {
-        this.props.setUploadedFile(response.data.filename);
-        this.props.setErrorUploading(null);
-        this.props.setIsUploading(false);
-      })
-      .catch((error) => {
-        this.props.setErrorUploading('Error uploading file. Please try again.');
-        this.props.setIsUploading(false);
-      });
-  }
-
   handleTranscription() {
     const { uploadedFile, accuracyMode } = this.props;
-    if (!uploadedFile) {
+    const { uploadUrl } = this.state;
+    
+    if (!uploadedFile || !uploadUrl) {
       this.props.setErrorTranscribing('No audio file uploaded.');
       return;
     }
 
     this.props.setIsProcessing(true);
-    Api.post('audio/transcribe', { filename: uploadedFile, mode: accuracyMode })
+    this.props.setErrorTranscribing(null);
+
+    Api.post('/job/transcribe', { 
+      filename: uploadedFile, 
+      mode: accuracyMode,
+      url: uploadUrl
+    })
       .then((response) => {
-        this.props.setTranscriptionFilename(response.data.transcription_filename);
-        this.props.setPidProcess(response.data.pid_process);
-        this.getTranscriptionData(response.data.transcription_filename);
-        localStorage.setItem('pid', response.data.pid_process);
+        const jobId = response.data.id;
+        this.props.setPidProcess(jobId);
+        this.getTranscriptionData(jobId);
+        localStorage.setItem('job_id', jobId);
       })
       .catch((error) => {
-        this.props.setErrorTranscribing('Error getting transcription. Please try again.');
+        const errorMessage = error.response?.data?.detail || 'Error starting transcription. Please try again.';
+        this.props.setErrorTranscribing(errorMessage);
         this.props.setIsProcessing(false);
-        const pid = this.props.pidProcess;
-        if (pid) {
-          this.terminateTranscription(pid);
-        }
       });
   }
 
-  getTranscriptionData = (transcriptionFilename) => {
-    const checkTranscriptionFile = () => {
-      Api.get(`audio/transcription?filename=${transcriptionFilename}`)
-        .then((response) => {
-          const { transcription } = response.data;
-          if (transcription) {
-            this.props.setTranscription(transcription);
-            this.props.setIsProcessing(false);
-            this.props.setPidProcess(null);
-            this.props.setDownloadableText(URL.createObjectURL(new Blob([transcription], { type: 'text/plain' })));
+  getTranscriptionData = (jobId) => {
+    // Use WebSocket instead of polling
+    const wsUrl = `ws://localhost:3203/api/v1/job/ws/${jobId}`;
+    this.websocket = new WebSocket(wsUrl);
 
-            clearInterval(this.fileCheckInterval);
-          }
-        })
-        .catch((error) => {
-          this.props.setErrorTranscribing('Error checking transcription file. Please try again.');
-          this.props.setIsProcessing(false);
-          const pid = this.props.pidProcess;
-          if (pid) {
-            this.terminateTranscription(pid);
-          }
-          clearInterval(this.fileCheckInterval);
-        });
+    this.websocket.onopen = () => {
+      console.log('WebSocket connected for job:', jobId);
     };
 
-    this.fileCheckInterval = setInterval(checkTranscriptionFile, 5000);
-    checkTranscriptionFile();
+    this.websocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('WebSocket message received:', data);
+      
+      if (data.type === 'job_update') {
+        const { status, result, message } = data;
+        console.log('Vars:', status, result, message);
+        if (status === 'completed' && result) {
+          this.props.setTranscription(result);
+          this.props.setIsProcessing(false);
+          this.props.setPidProcess(null);
+          this.props.setDownloadableText(
+            URL.createObjectURL(new Blob([result], { type: 'text/plain' }))
+          );
+          this.props.setTranscriptionFilename(`${this.props.selectedFile.name}.txt`);
+          this.websocket.close();
+        } else if (status === 'failed') {
+          this.props.setErrorTranscribing(message || 'Transcription failed');
+          this.props.setIsProcessing(false);
+          this.websocket.close();
+        }
+        // If status is 'pending' or 'processing', keep listening
+      }
+    };
+
+    this.websocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      this.props.setErrorTranscribing('Connection error. Please try again.');
+      this.props.setIsProcessing(false);
+    };
+
+    this.websocket.onclose = () => {
+      console.log('WebSocket connection closed for job:', jobId);
+    };
   };
 
-  terminateTranscription = (pid) => {
-    Api.post('audio/terminate', { pid: pid })
-      .then((response) => {
-        console.log('Transcription killed successfully');
-        localStorage.clear();
-      })
-      .catch((error) => {
-        this.props.setErrorTranscribing('Error killing transcription process');
-      });
+  terminateTranscription = (jobId) => {
+    // Close WebSocket connection
+    if (this.websocket) {
+      this.websocket.close();
+    }
+    console.log('Job cancellation not implemented yet:', jobId);
+    localStorage.clear();
   };
 
   clearAllState() {
@@ -153,15 +188,19 @@ class GetTextAudio extends Component {
     if (pid) {
       this.terminateTranscription(pid);
     }
-    clearInterval(this.fileCheckInterval);
+    if (this.fileCheckInterval) {
+      clearInterval(this.fileCheckInterval);
+    }
+    if (this.websocket) {
+      this.websocket.close();
+    }
+    this.setState({ isFileUploaded: false, audioPreviewUrl: '', uploadUrl: '' });
     this.props.clearState();
   }
 
   render() {
     const {
       selectedFile,
-      selectedFilename,
-      uploadedFile,
       transcription,
       transcriptionFilename,
       downloadableText,
@@ -171,12 +210,13 @@ class GetTextAudio extends Component {
       isProcessing,
       accuracyMode,
     } = this.props;
-    console.log(downloadableText)
-    console.log(transcription)
+
+    const { isFileUploaded, audioPreviewUrl } = this.state;
 
     return (
       <div className="container">
         <h2>Transcribe Audio</h2>
+        
         <label className="label-file">
           Choose Audio File
           <input
@@ -184,42 +224,59 @@ class GetTextAudio extends Component {
             onChange={this.handleFileChange}
             accept="audio/*"
             className="input-file"
+            disabled={isUploading || isProcessing}
           />
         </label>
-        {(selectedFilename || selectedFile) && <p className="filename">{selectedFilename || selectedFile.name}</p>}
-        <button onClick={this.handleUpload} disabled={isUploading || isProcessing}>
-          Upload Audio
-        </button>
+
+        {isUploading && <p>Uploading file...</p>}
         {errorUploading && <p className="error">{errorUploading}</p>}
-        {uploadedFile && (
-          <div>
-            <p>Uploaded Audio: {selectedFilename || selectedFile.name}</p>
-            <div className="audio-container">
-              <div className="combo-box">
-                <h3>Select the accuracy mode</h3>
-                <select value={accuracyMode} onChange={this.handleModeChange}>
-                  <option value="base">Base</option>
-                  <option value="tiny">Tiny</option>
-                  <option value="small">Small</option>
-                  <option value="medium">Medium</option>
-                  <option value="large">Large</option>
-                </select>
-              </div>
-              <button onClick={this.handleTranscription} disabled={isUploading || isProcessing}>
-                Get Text from Audio
-              </button>
-            </div>
+
+        {/* Audio Preview Section */}
+        {isFileUploaded && audioPreviewUrl && (
+          <div className="audio-preview">
+            <h3>Audio Preview:</h3>
+            <audio controls style={{ width: '100%', marginBottom: '20px' }}>
+              <source src={audioPreviewUrl} type={selectedFile.type} />
+              Your browser does not support the audio element.
+            </audio>
           </div>
         )}
+
+        {selectedFile && <p className="filename">{selectedFile.name}</p>}
+        
+        {/* Transcription Controls */}
+        {isFileUploaded && (
+          <div className="audio-container">
+            <div className="combo-box">
+              <h3>Select the accuracy mode</h3>
+              <select value={accuracyMode} onChange={this.handleModeChange} disabled={isProcessing}>
+                <option value="base">Base</option>
+                <option value="tiny">Tiny</option>
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </div>
+            <button 
+              onClick={this.handleTranscription} 
+              disabled={isProcessing}
+              style={{ marginTop: '10px' }}
+            >
+              {isProcessing ? 'Processing...' : 'Get Text from Audio'}
+            </button>
+          </div>
+        )}
+        
         {isProcessing && (
           <div>
             <p>Processing audio, please wait...</p>
             <button onClick={this.clearAllState}>Cancel</button>
           </div>
-          )
-        }
+        )}
         
         {errorTranscribing && <p className="error">{errorTranscribing}</p>}
+        
+        {/* Transcription Results */}
         {transcription && (
           <div className="transcription">
             <h3>Transcription Ready:</h3>
@@ -227,7 +284,7 @@ class GetTextAudio extends Component {
               Download Transcription
             </a>
             <textarea readOnly value={transcription} />
-            <button onClick={this.clearAllState}>transcribe new audio</button>
+            <button onClick={this.clearAllState}>Transcribe New Audio</button>
           </div>
         )}
       </div>

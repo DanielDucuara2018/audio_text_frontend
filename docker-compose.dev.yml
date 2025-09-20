@@ -1,6 +1,3 @@
-
-version: "3.7"
-
 services:  
   app_dev:
     build:
@@ -8,7 +5,7 @@ services:
       dockerfile: ./Dockerfile.dev
     networks:
       audio_text_backend_audio_text_bridge:
-        ipv4_address: 169.254.9.3
+        ipv4_address: 169.254.9.7
         aliases:
           - "audio-text-frontend-dev.app"
     ports:
@@ -23,7 +20,7 @@ services:
     image: nginx:latest
     networks:
       audio_text_backend_audio_text_bridge:
-        ipv4_address: 169.254.9.4
+        ipv4_address: 169.254.9.8
         aliases:
           - "audio-text-nginx.app"
     ports:
