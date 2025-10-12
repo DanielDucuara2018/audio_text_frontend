@@ -1,31 +1,20 @@
 import React from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
-import GetTextAudio from './components/GetTextAudio';
+import AudioTranscription from './components/AudioTranscription';
 import { store, persistor } from './Store';
+import './App.css';
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: (
-      <div>
-        <GetTextAudio />
-      </div>
-    ),
-  },
-]);
-
-class App extends React.Component {
-  render() {
-    return (
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <RouterProvider router={router} />
-        </PersistGate>
-      </Provider>
-    );
-  }
-}
+const App = () => {
+  return (
+    <Provider store={store}>
+      <PersistGate loading={<div className="loading">Loading...</div>} persistor={persistor}>
+        <div className="app">
+          <AudioTranscription />
+        </div>
+      </PersistGate>
+    </Provider>
+  );
+};
 
 export default App;

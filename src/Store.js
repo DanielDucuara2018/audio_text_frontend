@@ -1,20 +1,23 @@
-import { createStore, combineReducers } from 'redux';
+import { createStore } from 'redux';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage'; 
 import appReducer from './reducers/appReducer';
 
-// Configuration object for redux-persist
+// Configuration object for redux-persist - only persist essential data
 const persistConfig = {
-  key: 'root',
+  key: 'audioTranscription',
   storage,
+  whitelist: ['jobs', 'settings'], // Only persist job history and user settings
 };
 
-// Combine reducers and wrap them with persistReducer
-const rootReducer = combineReducers({
-  appRootReducer: persistReducer(persistConfig, appReducer),
-});
+// Create persisted reducer
+const persistedReducer = persistReducer(persistConfig, appReducer);
 
-const store = createStore(rootReducer);
+const store = createStore(
+  persistedReducer,
+  window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+);
+
 const persistor = persistStore(store);
 
 export { store, persistor };

@@ -1,31 +1,54 @@
+// Action Types
+export const SET_CURRENT_JOB = 'SET_CURRENT_JOB';
+export const ADD_JOB_TO_HISTORY = 'ADD_JOB_TO_HISTORY';
+export const UPDATE_JOB_STATUS = 'UPDATE_JOB_STATUS';
+export const CLEAR_CURRENT_JOB = 'CLEAR_CURRENT_JOB';
+export const SET_SETTINGS = 'SET_SETTINGS';
+export const SET_ERROR = 'SET_ERROR';
+export const CLEAR_ERROR = 'CLEAR_ERROR';
+export const REMOVE_JOB_FROM_HISTORY = 'REMOVE_JOB_FROM_HISTORY';
+export const VIEW_JOB_RESULT = 'VIEW_JOB_RESULT';
 
+// Action Creators
+export const setCurrentJob = (job) => ({
+  type: SET_CURRENT_JOB,
+  payload: job
+});
 
+export const addJobToHistory = (job) => ({
+  type: ADD_JOB_TO_HISTORY,
+  payload: job
+});
 
-export const SET_SELECTED_FILE = 'SET_SELECTED_FILE';
-export const SET_SELECTED_FILENAME = 'SET_SELECTED_FILENAME';
-export const SET_UPLOADED_FILE = 'SET_UPLOADED_FILE';
-export const SET_TRANSCRIPTION = 'SET_TRANSCRIPTION';
-export const SET_TRANSCRIPTION_FILENAME = 'SET_TRANSCRIPTION_FILENAME';
-export const SET_PID_PROCESS = 'SET_PID_PROCESS';
-export const SET_DOWNLOADABLE_TEXT = 'SET_DOWNLOADABLE_TEXT';
-export const SET_ERROR_UPLOADING = 'SET_ERROR_UPLOADING';
-export const SET_ERROR_TRANSCRIBING = 'SET_ERROR_TRANSCRIBING';
-export const SET_IS_UPLOADING = 'SET_IS_UPLOADING';
-export const SET_IS_PROCESSING = 'SET_IS_PROCESSING';
-export const SET_ACCURACY_MODE = 'SET_ACCURACY_MODE';
-export const CLEAR_STATE = 'CLEAR_STATE';
+export const updateJobStatus = (job) => ({
+  type: UPDATE_JOB_STATUS,
+  payload: job
+});
 
-export const setSelectedFile = (file) => ({ type: SET_SELECTED_FILE, payload: file });
-export const setSelectedFilename = (filename) => ({ type: SET_SELECTED_FILENAME, payload: filename });
-export const setUploadedFile = (file) => ({ type: SET_UPLOADED_FILE, payload: file });
-export const setTranscription = (transcription) => ({ type: SET_TRANSCRIPTION, payload: transcription });
-export const setTranscriptionFilename = (filename) => ({ type: SET_TRANSCRIPTION_FILENAME, payload: filename });
-export const setPidProcess = (pid) => ({ type: SET_PID_PROCESS, payload: pid });
-export const setDownloadableText = (text) => ({ type: SET_DOWNLOADABLE_TEXT, payload: text });
-export const setErrorUploading = (error) => ({ type: SET_ERROR_UPLOADING, payload: error });
-export const setErrorTranscribing = (error) => ({ type: SET_ERROR_TRANSCRIBING, payload: error });
-export const setIsUploading = (isUploading) => ({ type: SET_IS_UPLOADING, payload: isUploading });
-export const setIsProcessing = (isProcessing) => ({ type: SET_IS_PROCESSING, payload: isProcessing });
-export const setAccuracyMode = (mode) => ({ type: SET_ACCURACY_MODE, payload: mode });
-export const clearState = () => ({ type: CLEAR_STATE });
-  
+export const clearCurrentJob = () => ({
+  type: CLEAR_CURRENT_JOB
+});
+
+export const setSettings = (settings) => ({
+  type: SET_SETTINGS,
+  payload: settings
+});
+
+export const setError = (error) => ({
+  type: SET_ERROR,
+  payload: error
+});
+
+export const clearError = () => ({
+  type: CLEAR_ERROR
+});
+
+export const removeJobFromHistory = (jobId) => ({
+  type: REMOVE_JOB_FROM_HISTORY,
+  payload: jobId
+});
+
+export const viewJobResult = (job) => ({
+  type: VIEW_JOB_RESULT,
+  payload: job
+});
