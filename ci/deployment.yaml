@@ -1,0 +1,60 @@
+# Simplified Google Cloud Build configuration
+
+steps:
+  # Build the React app
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-f"
+      - "Dockerfile.cloud"
+      - "--target"
+      - "builder"
+      - "--build-arg"
+      - "REACT_APP_AUDIO_TEXT_API_URL_ENV=${_API_URL}"
+      - "--build-arg"
+      - "REACT_APP_AUDIO_TEXT_WS_URL_ENV=${_WS_URL}"
+      - "-t"
+      - "temp-build"
+      - "."
+
+  # Extract build files
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["create", "--name", "temp-container", "temp-build"]
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["cp", "temp-container:/app/build", "/workspace/build-output"]
+
+  # Deploy to Cloud Storage
+  - name: "gcr.io/cloud-builders/gsutil"
+    args:
+      - "rsync"
+      - "-r"
+      - "-d"
+      - "/workspace/build-output/"
+      - "gs://${_BUCKET_NAME}"
+
+  # Set cache headers
+  - name: "gcr.io/cloud-builders/gsutil"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        # Long cache for static assets
+        gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://${_BUCKET_NAME}/static/**/* || true
+        # Short cache for HTML
+        gsutil -m setmeta -h "Cache-Control:public, max-age=300" gs://${_BUCKET_NAME}/*.html || true
+
+  # Cleanup
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["rm", "temp-container"]
+
+substitutions:
+  _BUCKET_NAME: "your-app-bucket"
+  _API_URL: "https://api.voiceia.techlab.com"
+  _WS_URL: "wss://api.voiceia.techlab.com"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: "E2_STANDARD_2"
+
+timeout: "600s"

@@ -12,6 +12,7 @@ import {
   viewJobResult,
 } from '../actions/appActions';
 import Api from '../Api';
+import { getWebSocketUrl } from '../Api';
 import axios from 'axios';
 import './AudioTranscription.css';
 
@@ -182,7 +183,7 @@ const AudioTranscription = ({
       websocketRef.current.close();
     }
 
-    const wsUrl = `ws://localhost:3203/api/v1/job/ws/${jobId}`;
+    const wsUrl = `${getWebSocketUrl('/job/ws/')}${jobId}`;
     const ws = new WebSocket(wsUrl);
     websocketRef.current = ws;
 
@@ -215,7 +216,6 @@ const AudioTranscription = ({
                 downloadFilename: `${selectedFile?.name || 'transcription'}_transcription.txt`
             };
             
-            console.log(completedJob)
             updateJobStatus(completedJob);
             ws.close();
         } else if (data.status === JOB_STATUS.FAILED) {

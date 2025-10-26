@@ -1,8 +1,13 @@
 import axios from 'axios';
 
+// Get API URL from environment variable or use default
+// React requires REACT_APP_ prefix, so we map from our AUDIO_TEXT_ vars
+const API_BASE_URL = process.env.REACT_APP_AUDIO_TEXT_API_URL_ENV || 'http://localhost:3203';
+const WS_BASE_URL = process.env.REACT_APP_AUDIO_TEXT_WS_URL_ENV || 'ws://localhost:3203';
+
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: "http://localhost:3203/api/v1",
+  baseURL: `${API_BASE_URL}/api/v1`,
   timeout: 30000, // 30 seconds timeout
   headers: {
     'Content-Type': 'application/json',
@@ -44,4 +49,8 @@ api.interceptors.response.use(
   }
 );
 
+// Export WebSocket URL for use in other components
+export const getWebSocketUrl = (path) => `${WS_BASE_URL}/api/v1${path}`;
+
 export default api;
+
