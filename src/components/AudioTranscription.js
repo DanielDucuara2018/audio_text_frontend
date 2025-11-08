@@ -24,12 +24,14 @@ const JOB_STATUS = {
   FAILED: 'failed'
 };
 
+// Updated model descriptions with faster-whisper performance
 const WHISPER_MODELS = [
-  { value: 'tiny', label: 'Tiny (fastest, less accurate)' },
-  { value: 'base', label: 'Base (balanced)' },
-  { value: 'small', label: 'Small (good quality)' },
-  { value: 'medium', label: 'Medium (better quality)' },
-  { value: 'large', label: 'Large (best quality, slowest)' }
+  { value: 'tiny', label: 'Tiny' },
+  { value: 'base', label: 'Base' },
+  { value: 'small', label: 'Small' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'large-v3', label: 'Large V3' },
+  { value: 'turbo', label: 'Turbo' }
 ];
 
 const AudioTranscription = ({
@@ -52,22 +54,126 @@ const AudioTranscription = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [presignedUrl, setPresignedUrl] = useState(null);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
   
   // Refs for cleanup
   const websocketRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isRecoveringRef = useRef(false); // Prevent double recovery in Strict Mode
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      console.log('Component unmounting - closing WebSocket');
       if (websocketRef.current) {
-        websocketRef.current.close();
+        try {
+          websocketRef.current.close();
+          websocketRef.current = null;
+        } catch (error) {
+          console.error('Error closing WebSocket on unmount:', error);
+        }
       }
       if (audioPreviewUrl) {
         URL.revokeObjectURL(audioPreviewUrl);
       }
     };
   }, [audioPreviewUrl]);
+
+  // Warn user before leaving page during processing
+  useEffect(() => {
+    const isProcessing = currentJob && [JOB_STATUS.PENDING, JOB_STATUS.PROCESSING].includes(currentJob?.status);
+    
+    const handleBeforeUnload = (e) => {
+      if (isProcessing) {
+        e.preventDefault();
+        e.returnValue = 'Transcription in progress. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentJob]);
+
+  // Recover job on page load (check if there's a job in progress)
+  useEffect(() => {
+    const recoverJob = async () => {
+
+      if (!currentJob) {
+        console.log('No job to recover (currentJob is null)');
+        return;
+      }
+
+      if (![JOB_STATUS.PENDING, JOB_STATUS.PROCESSING].includes(currentJob.status)) {
+        console.log(`Job ${currentJob.id} is ${currentJob.status}, no recovery needed`);
+        return;
+      }
+
+      // Prevent double execution in React Strict Mode
+      if (isRecoveringRef.current) {
+        console.log('Recovery already in progress, skipping duplicate call');
+        return;
+      }
+
+      console.log(`Recovering job ${currentJob.id} (status: ${currentJob.status})...`);
+      isRecoveringRef.current = true; // Mark recovery as in progress
+      setIsRecovering(true);
+
+      try {
+        // Poll backend for current status
+        const response = await Api.get(`/job/status/${currentJob.id}`);
+        const jobData = response.data;
+
+        if (jobData.status === JOB_STATUS.COMPLETED) {
+          // Job finished while user was away
+          console.log('Job completed during page refresh');
+          const blob = new Blob([jobData.result_text], { type: 'text/plain' });
+          const downloadUrl = URL.createObjectURL(blob);
+
+          updateJobStatus({
+            ...currentJob,
+            status: JOB_STATUS.COMPLETED,
+            result: jobData.result_text,
+            processingTime: jobData.processing_time_seconds,
+            language: jobData.language,
+            languageProbability: jobData.language_probability,
+            downloadUrl,
+            downloadFilename: `${currentJob.filename}_transcription.txt`,
+            updatedAt: new Date().toISOString(),
+          });
+        } else if (jobData.status === JOB_STATUS.FAILED) {
+          // Job failed while user was away
+          console.log('Job failed during page refresh');
+          updateJobStatus({
+            ...currentJob,
+            status: JOB_STATUS.FAILED,
+            error: jobData.error_message || 'Transcription failed',
+            updatedAt: new Date().toISOString(),
+          });
+        } else {
+          // Still processing - reconnect WebSocket
+          console.log('Job still processing, reconnecting WebSocket...');
+          connectWebSocket(currentJob.id);
+        }
+      } catch (error) {
+        console.error('Failed to recover job status:', error);
+        // Try WebSocket anyway as fallback
+        connectWebSocket(currentJob.id);
+      } 
+    };
+
+    recoverJob();
+
+    // Cleanup function to reset recovery flag if component unmounts during recovery
+    return () => {
+      if (isRecoveringRef.current) {
+        console.log('Cleanup: Resetting recovery flag');
+        isRecoveringRef.current = false;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
 
   // Handle file selection
   const handleFileSelect = async (event) => {
@@ -142,7 +248,12 @@ const AudioTranscription = ({
       return;
     }
 
+    if (isSubmitting) {
+      return; // Prevent multiple submissions
+    }
+
     try {
+      setIsSubmitting(true);
       clearError();
       
       // Upload file first
@@ -174,69 +285,104 @@ const AudioTranscription = ({
       
     } catch (error) {
       setError(error.response?.data?.detail || 'Failed to start transcription');
+      setIsSubmitting(false);
     }
   };
 
   // WebSocket connection for real-time updates
   const connectWebSocket = useCallback((jobId) => {
+    // Close existing connection if any
     if (websocketRef.current) {
+      console.log('Closing existing WebSocket connection...');
       websocketRef.current.close();
+      websocketRef.current = null;
     }
 
-    const wsUrl = `${getWebSocketUrl('/job/ws/')}${jobId}`;
-    const ws = new WebSocket(wsUrl);
-    websocketRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('WebSocket connected for job:', jobId);
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    // Small delay to ensure previous connection is fully closed
+    setTimeout(() => {
+      const wsUrl = `${getWebSocketUrl('/job/ws/')}${jobId}`;
+      console.log('Connecting to WebSocket:', wsUrl);
       
-      if (data.type === 'job_update') {
-        // Create updated job using jobId instead of stale currentJob
-        const baseJobUpdate = {
-          id: jobId,
-          status: data.status,
-          result: data.result,
-          error: data.message,
-          processingTime: data.processing_time,
-          updatedAt: new Date().toISOString()
+      try {
+        const ws = new WebSocket(wsUrl);
+        websocketRef.current = ws;
+
+        ws.onopen = () => {
+          console.log('WebSocket connected for job:', jobId);
         };
 
-        if (data.status === JOB_STATUS.COMPLETED) {            
-            // Create downloadable blob
-            const blob = new Blob([data.result], { type: 'text/plain' });
-            const downloadUrl = URL.createObjectURL(blob);
-            
-            const completedJob = {
-                ...baseJobUpdate,
-                downloadUrl,
-                downloadFilename: `${selectedFile?.name || 'transcription'}_transcription.txt`
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          
+          // Handle ping messages with pong response
+          if (data.type === 'ping') {
+            try {
+              ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
+            } catch (error) {
+              console.error('Failed to send pong:', error);
+            }
+            return;
+          }
+          
+          // Handle job updates
+          if (data.type === 'job_update') {
+            // Create updated job using jobId instead of stale currentJob
+            const baseJobUpdate = {
+              id: jobId,
+              status: data.status,
+              result: data.result,
+              error: data.message,
+              processingTime: data.processing_time,
+              updatedAt: new Date().toISOString(),
+              // New faster-whisper fields
+              language: data.language,
+              languageProbability: data.language_probability
             };
-            
-            updateJobStatus(completedJob);
-            ws.close();
-        } else if (data.status === JOB_STATUS.FAILED) {
-            updateJobStatus(baseJobUpdate);
-            setError(data.message || 'Transcription failed');
-            ws.close();
-        } else {
-            // For PENDING or PROCESSING status
-            updateJobStatus(baseJobUpdate);
-        }
+
+            if (data.status === JOB_STATUS.COMPLETED) {            
+                // Create downloadable blob
+                const blob = new Blob([data.result], { type: 'text/plain' });
+                const downloadUrl = URL.createObjectURL(blob);
+
+                const completedJob = {
+                    ...baseJobUpdate,
+                    downloadUrl,
+                    downloadFilename: `${selectedFile?.name || 'transcription'}_transcription.txt`
+                };
+
+                updateJobStatus(completedJob);
+                ws.close();
+            } else if (data.status === JOB_STATUS.FAILED) {
+                updateJobStatus(baseJobUpdate);
+                setError(data.message || 'Transcription failed');
+                ws.close();
+            } else {
+                // For PENDING or PROCESSING status
+                updateJobStatus(baseJobUpdate);
+            }
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          // Don't show error on initial connection attempts during recovery
+          if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+            setError('Connection error. Please try again.');
+          }
+        };
+
+        ws.onclose = (event) => {
+          console.log('WebSocket connection closed', event.code, event.reason);
+          // Clean up reference
+          if (websocketRef.current === ws) {
+            websocketRef.current = null;
+          }
+        };
+      } catch (error) {
+        console.error('Failed to create WebSocket:', error);
+        setError('Failed to establish connection. Please try again.');
       }
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setError('Connection error. Please try again.');
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket connection closed');
-    };
+    }, 100); // 100ms delay to ensure clean connection
   }, [updateJobStatus, selectedFile, setError]);
 
   // Cancel current job
@@ -253,6 +399,7 @@ const AudioTranscription = ({
     setSelectedFile(null);
     setUploadProgress(0);
     setPresignedUrl(null);
+    setIsSubmitting(false);
     if (audioPreviewUrl) {
       URL.revokeObjectURL(audioPreviewUrl);
       setAudioPreviewUrl('');
@@ -371,8 +518,12 @@ const AudioTranscription = ({
                   </label>
                 </div>
 
-                <button onClick={startTranscription} className="transcribe-btn">
-                  Start Transcription
+                <button
+                  onClick={startTranscription}
+                  className="transcribe-btn"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Starting...' : 'Start Transcription'}
                 </button>
               </div>
             )}
@@ -404,7 +555,11 @@ const AudioTranscription = ({
               <div className="status-indicator">
                 <div className="spinner"></div>
                 <span className="status-text">
-                  {currentJob.status === JOB_STATUS.PENDING ? 'Preparing...' : 'Transcribing...'}
+                  {isRecovering
+                    ? 'Reconnecting...'
+                    : currentJob.status === JOB_STATUS.PENDING
+                      ? 'Preparing...'
+                      : 'Transcribing...'}
                 </span>
               </div>
               <p className="model-info">Using {currentJob.whisperModel} model</p>
@@ -420,7 +575,14 @@ const AudioTranscription = ({
               <div className="results-meta">
                 <span>Model: {currentJob.whisperModel}</span>
                 {currentJob.processingTime && (
-                  <span>Time: {currentJob.processingTime}s</span>
+                  <span>Time: {currentJob.processingTime.toFixed(1)}s</span>
+                )}
+                {currentJob.language && (
+                  <span>Language: {currentJob.language.toUpperCase()}
+                    {currentJob.languageProbability &&
+                      ` (${(currentJob.languageProbability * 100).toFixed(0)}%)`
+                    }
+                  </span>
                 )}
               </div>
             </div>

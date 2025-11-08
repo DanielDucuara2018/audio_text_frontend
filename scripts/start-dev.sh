@@ -24,8 +24,8 @@ if [ ! -f "nginx/ssl/nginx-selfsigned.crt" ] || [ ! -f "nginx/ssl/nginx-selfsign
     echo 'subjectAltName = @alt_names'
     echo '[alt_names]'
     echo 'DNS.1 = localhost'
-    echo 'DNS.2 = voiceia.techlab.local'
-    echo 'DNS.3 = api.voiceia.techlab.local'
+    echo 'DNS.2 = voiceia.danobhub.local'
+    echo 'DNS.3 = api.voiceia.danobhub.local'
     echo 'IP.1 = 127.0.0.1'
     )
     
@@ -40,13 +40,13 @@ if [ ! -f "nginx/ssl/dhparam.pem" ]; then
 fi
 
 # Add hostnames to /etc/hosts if not already present
-if ! grep -q "voiceia.techlab.local" /etc/hosts; then
+if ! grep -q "voiceia.danobhub.local" /etc/hosts; then
     echo "📝 Adding hostnames to /etc/hosts (requires sudo)..."
-    echo "127.0.0.1 voiceia.techlab.local api.voiceia.techlab.local" | sudo tee -a /etc/hosts
+    echo "127.0.0.1 voiceia.danobhub.local api.voiceia.danobhub.local" | sudo tee -a /etc/hosts
 fi
 
 # Add SSL certificate to system trust store
-CERT_DEST="/usr/local/share/ca-certificates/voiceia-techlab.crt"
+CERT_DEST="/usr/local/share/ca-certificates/voiceia-danobhub.crt"
 if [ ! -f "$CERT_DEST" ] || ! cmp -s "nginx/ssl/nginx-selfsigned.crt" "$CERT_DEST"; then
     echo "🔒 Adding SSL certificate to system trust store (requires sudo)..."
     sudo cp nginx/ssl/nginx-selfsigned.crt "$CERT_DEST"
@@ -62,8 +62,8 @@ docker-compose up -d --build
 echo "✅ Development environment is ready!"
 echo ""
 echo "🌐 Access your application:"
-echo "   Frontend: https://voiceia.techlab.local"
-echo "   API:      https://api.voiceia.techlab.local"
+echo "   Frontend: https://voiceia.danobhub.local"
+echo "   API:      https://api.voiceia.danobhub.local"
 echo ""
 echo "🔧 Features enabled:"
 echo "   ✓ SSL/TLS encryption"

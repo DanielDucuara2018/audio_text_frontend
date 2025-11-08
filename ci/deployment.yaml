@@ -50,10 +50,9 @@ steps:
 
 substitutions:
   _BUCKET_NAME: "your-app-bucket"
-  _API_URL: "https://api.voiceia.techlab.com"
-  _WS_URL: "wss://api.voiceia.techlab.com"
-
-options:
+  # API Configuration
+  _API_URL: "https://api.voiceia.danobhub.com"
+  _WS_URL: "wss://api.voiceia.danobhub.com"options:
   logging: CLOUD_LOGGING_ONLY
   machineType: "E2_STANDARD_2"
 

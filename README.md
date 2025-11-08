@@ -255,6 +255,35 @@ gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" "gs://y
 gsutil -m setmeta -h "Cache-Control:public, max-age=300, must-revalidate" "gs://your-bucket/*.html"
 ```
 
+### Cloudflare Worker Setup
+
+To use a custom domain (e.g., `voiceia.danobhub.com`) with Cloud Storage:
+
+**1. Deploy the Worker:**
+
+- Go to Cloudflare Dashboard → Workers & Pages
+- Create Worker named `voiceia-proxy`
+- Copy code from `cloudflare-worker.js`
+- Deploy
+
+**2. Set Environment Variable:**
+
+- Worker Settings → Variables
+- Add: `BUCKET_NAME` = `hispanie-frontend` (your bucket name)
+
+**3. Add Route:**
+
+- Your domain → Workers Routes → Add Route
+- Route: `voiceia.danobhub.com/*`
+- Worker: `voiceia-proxy`
+
+**4. Configure DNS:**
+
+- DNS → Records → Add
+- Type: `A`, Name: `voiceia`, Content: `192.0.2.1`, Proxied: ON
+
+**Why?** The worker keeps your custom domain in the browser while serving content from Cloud Storage.
+
 ## Project Structure
 
 ```

@@ -7,7 +7,7 @@ import appReducer from './reducers/appReducer';
 const persistConfig = {
   key: 'audioTranscription',
   storage,
-  whitelist: ['jobs', 'settings'], // Only persist job history and user settings
+  whitelist: ['jobs', 'settings', 'currentJob'], // Persist current job for recovery
 };
 
 // Create persisted reducer

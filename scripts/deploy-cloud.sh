@@ -9,32 +9,57 @@ show_usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  -b, --bucket BUCKET        GCS bucket name (required)"
+    echo "  -p, --project PROJECT      GCP project ID (auto-fetches bucket from Terraform)"
+    echo "  -b, --bucket BUCKET        GCS bucket name (optional if using -p)"
+    echo "  --api-url URL             API URL (optional, defaults from Terraform or env)"
+    echo "  --ws-url URL              WebSocket URL (optional, defaults from Terraform or env)"
+    echo "  -t, --terraform-dir DIR   Path to Terraform directory (default: ../audio_text_infrastructure)"
     echo "  --skip-build              Skip Docker build and use existing build-output"
     echo "  --no-cleanup              Don't cleanup temporary files"
+    echo "  --no-auto-fetch           Don't automatically fetch config from Terraform"
     echo "  -h, --help                Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0 -b my-frontend-bucket"
-    echo "  $0 -b my-bucket --skip-build"
+    echo "  $0 -p my-project-id                    # Auto-fetch bucket and URLs from Terraform"
+    echo "  $0 -b my-frontend-bucket               # Manual bucket name"
+    echo "  $0 -p my-project-id --skip-build       # Use existing build"
 }
 
 # Default configuration
 DOCKER_IMAGE="audio-text-frontend"
 CONTAINER_NAME="temp-build-container"
+PROJECT_ID=""
 BUCKET=""
 SKIP_BUILD=false
 NO_CLEANUP=false
+AUTO_FETCH_CONFIG=true
+TERRAFORM_DIR="../audio_text_infrastructure"
 
-# API configuration (defaults for production)
-API_URL="${REACT_APP_AUDIO_TEXT_API_URL_ENV:-https://api.voiceia.techlab.com}"
-WS_URL="${REACT_APP_AUDIO_TEXT_WS_URL_ENV:-wss://api.voiceia.techlab.com}"
+# API configuration (can be fetched from Terraform or use defaults)
+API_URL="${REACT_APP_AUDIO_TEXT_API_URL_ENV:-}"
+WS_URL="${REACT_APP_AUDIO_TEXT_WS_URL_ENV:-}"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
+        -p|--project)
+            PROJECT_ID="$2"
+            shift 2
+            ;;
         -b|--bucket)
             BUCKET="$2"
+            shift 2
+            ;;
+        --api-url)
+            API_URL="$2"
+            shift 2
+            ;;
+        --ws-url)
+            WS_URL="$2"
+            shift 2
+            ;;
+        -t|--terraform-dir)
+            TERRAFORM_DIR="$2"
             shift 2
             ;;
         --skip-build)
@@ -45,21 +70,80 @@ while [[ $# -gt 0 ]]; do
             NO_CLEANUP=true
             shift
             ;;
+        --no-auto-fetch)
+            AUTO_FETCH_CONFIG=false
+            shift
+            ;;
         -h|--help)
             show_usage
             exit 0
             ;;
         *)
-            echo "Unknown option $1"
+            echo "❌ Unknown option: $1"
             show_usage
             exit 1
             ;;
     esac
 done
 
+# Fetch configuration from Terraform if project ID is provided
+if [[ -n "$PROJECT_ID" && "$AUTO_FETCH_CONFIG" == "true" ]]; then
+    echo "🔍 Fetching configuration from Terraform..."
+    
+    if [[ ! -d "$TERRAFORM_DIR" ]]; then
+        echo "⚠️  Warning: Terraform directory not found at $TERRAFORM_DIR"
+        echo "   Use -t to specify the correct path, or provide -b manually"
+    else
+        CURRENT_DIR=$(pwd)
+        cd "$TERRAFORM_DIR"
+        
+        # Check if terraform state exists
+        if terraform show &> /dev/null; then
+            # Get bucket name from Terraform
+            if [[ -z "$BUCKET" ]]; then
+                BUCKET=$(terraform output -raw frontend_bucket_name 2>/dev/null)
+                if [[ -n "$BUCKET" && "$BUCKET" != "null" ]]; then
+                    echo "   ✅ Bucket name: $BUCKET"
+                else
+                    echo "   ⚠️  Could not fetch bucket name from Terraform"
+                fi
+            fi
+            
+            # Get API URL from Terraform variables if not provided
+            if [[ -z "$API_URL" ]]; then
+                # Try to get from terraform.tfvars
+                API_SUBDOMAIN=$(grep 'api_subdomain' terraform.tfvars 2>/dev/null | cut -d'"' -f2)
+                if [[ -n "$API_SUBDOMAIN" ]]; then
+                    API_URL="https://${API_SUBDOMAIN}"
+                    WS_URL="wss://${API_SUBDOMAIN}"
+                    echo "   ✅ API URL: $API_URL"
+                    echo "   ✅ WS URL: $WS_URL"
+                fi
+            fi
+        else
+            echo "   ⚠️  No Terraform state found in $TERRAFORM_DIR"
+            echo "   Please run 'cd $TERRAFORM_DIR && terraform apply' first"
+        fi
+        
+        cd "$CURRENT_DIR"
+    fi
+fi
+
+# Set defaults if still empty
+if [[ -z "$API_URL" ]]; then
+    API_URL="https://api.voiceia.danobhub.com"
+    echo "   Using default API URL: $API_URL"
+fi
+if [[ -z "$WS_URL" ]]; then
+    WS_URL="wss://api.voiceia.danobhub.com"
+    echo "   Using default WS URL: $WS_URL"
+fi
+
 # Validate required arguments
 if [[ -z "$BUCKET" ]]; then
-    echo "❌ Error: Bucket name is required. Use -b or --bucket"
+    echo "❌ Error: Bucket name is required"
+    echo "   Either provide -p PROJECT_ID (auto-fetch from Terraform)"
+    echo "   Or provide -b BUCKET_NAME (manual)"
     show_usage
     exit 1
 fi
@@ -76,10 +160,15 @@ if [[ "$SKIP_BUILD" == false ]]; then
     echo "🏗️  Building optimized assets for GCS deployment..."
     echo "   API URL: ${API_URL}"
     echo "   WS URL: ${WS_URL}"
+    echo "   Bucket: ${BUCKET}"
+
+    # Set PUBLIC_URL for correct asset paths in Cloud Storage
+    PUBLIC_URL="https://storage.googleapis.com/${BUCKET}"
 
     docker build -f Dockerfile.cloud \
         --build-arg REACT_APP_AUDIO_TEXT_API_URL_ENV="${API_URL}" \
         --build-arg REACT_APP_AUDIO_TEXT_WS_URL_ENV="${WS_URL}" \
+        --build-arg PUBLIC_URL="${PUBLIC_URL}" \
         -t ${DOCKER_IMAGE}:cloud .
 
     echo "📦 Extracting build artifacts..."
