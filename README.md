@@ -227,13 +227,13 @@ For manual deployments or testing, use the included `deploy-cloud.sh` script:
 
 ```bash
 # Deploy to Google Cloud Storage
-./scripts/deploy-cloud.sh -b my-bucket-name
+./scripts/deploy-cloud.sh -p project_id
 
 # Skip build and use existing build-output
-./scripts/deploy-cloud.sh -b my-bucket-name --skip-build
+./scripts/deploy-cloud.sh -p project_id --skip-build
 
 # Keep build artifacts after deployment
-./scripts/deploy-cloud.sh -b my-bucket-name --no-cleanup
+./scripts/deploy-cloud.sh -p project_id --no-cleanup
 
 # See all options
 ./scripts/deploy-cloud.sh --help

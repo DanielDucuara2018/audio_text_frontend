@@ -30,8 +30,8 @@ const WHISPER_MODELS = [
   { value: 'base', label: 'Base' },
   { value: 'small', label: 'Small' },
   { value: 'medium', label: 'Medium' },
-  { value: 'large-v3', label: 'Large V3' },
-  { value: 'turbo', label: 'Turbo' }
+  // { value: 'large-v3', label: 'Large V3' },
+  // { value: 'turbo', label: 'Turbo' }
 ];
 
 const AudioTranscription = ({
