@@ -17,7 +17,7 @@ const WHISPER_MODELS: Array<{ value: WhisperModel; label: string; description: s
   { value: 'base', label: 'Base', description: 'Fast, good accuracy' },
   { value: 'small', label: 'Small', description: 'Balanced speed & quality' },
   { value: 'medium', label: 'Medium', description: 'Slower, high accuracy' },
-  // { value: 'large-v3', label: 'Large V3', description: 'Best accuracy, slowest' },
+  { value: 'large-v3', label: 'Large V3', description: 'Best accuracy, slowest' },
   // { value: 'turbo', label: 'Turbo', description: 'Fast, optimized' }
 ];
 

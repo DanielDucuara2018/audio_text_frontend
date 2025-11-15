@@ -6,7 +6,7 @@ services:
       target: dev
     networks:
       audio_text_backend_audio_text_bridge:
-        ipv4_address: 169.254.9.7
+        ipv4_address: 169.254.9.10
         aliases:
           - "audio-text-frontend.app"
     ports:
@@ -21,7 +21,7 @@ services:
     image: nginx:alpine
     networks:
       audio_text_backend_audio_text_bridge:
-        ipv4_address: 169.254.9.8
+        ipv4_address: 169.254.9.11
         aliases:
           - "audio-text-nginx.app"
     ports:

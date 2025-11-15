@@ -3,16 +3,19 @@ import { getWebSocketUrl } from '../Api';
 import { JobStatus, TranscriptionJob } from '../types';
 
 interface WebSocketMessage {
-  type: 'ping' | 'pong' | 'job_update' | 'error';
+  type: 'ping' | 'pong' | 'job_update' | 'error' | 'connected' | 'echo';
+  job_id?: string;
   status?: JobStatus;
+  progress?: number;
   result?: string;
   error?: string;
+  message?: string;
   language?: string;
-  languageProbability?: number;
-  processingTime?: number;
-  downloadUrl?: string;
-  downloadFilename?: string;
+  language_probability?: number;
+  processing_time?: number;
+  connection_id?: string;
   timestamp?: string;
+  data?: string;
 }
 
 interface UseWebSocketOptions {
@@ -83,14 +86,13 @@ export const useWebSocket = ({ onJobUpdate, onError }: UseWebSocketOptions) => {
                 status: data.status,
               };
 
-              // Add optional fields if present
+              // Add optional fields if present (convert from snake_case to camelCase)
               if (data.result !== undefined) jobUpdate.result = data.result;
               if (data.error !== undefined) jobUpdate.error = data.error;
               if (data.language !== undefined) jobUpdate.language = data.language;
-              if (data.languageProbability !== undefined) jobUpdate.languageProbability = data.languageProbability;
-              if (data.processingTime !== undefined) jobUpdate.processingTime = data.processingTime;
-              if (data.downloadUrl !== undefined) jobUpdate.downloadUrl = data.downloadUrl;
-              if (data.downloadFilename !== undefined) jobUpdate.downloadFilename = data.downloadFilename;
+              if (data.language_probability !== undefined) jobUpdate.languageProbability = data.language_probability;
+              if (data.processing_time !== undefined) jobUpdate.processingTime = data.processing_time;
+              if (data.progress !== undefined) jobUpdate.progress = data.progress;
 
               // Add timestamp if not present
               if (!jobUpdate.completedAt && (data.status === 'completed' || data.status === 'failed')) {
