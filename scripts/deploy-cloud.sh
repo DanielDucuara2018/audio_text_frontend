@@ -36,8 +36,8 @@ AUTO_FETCH_CONFIG=true
 TERRAFORM_DIR="../audio_text_infrastructure"
 
 # API configuration (can be fetched from Terraform or use defaults)
-API_URL="${REACT_APP_AUDIO_TEXT_API_URL_ENV:-}"
-WS_URL="${REACT_APP_AUDIO_TEXT_WS_URL_ENV:-}"
+API_URL="${VITE_AUDIO_TEXT_API_URL_ENV:-}"
+WS_URL="${VITE_AUDIO_TEXT_WS_URL_ENV:-}"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -166,8 +166,8 @@ if [[ "$SKIP_BUILD" == false ]]; then
     PUBLIC_URL="https://storage.googleapis.com/${BUCKET}"
 
     docker build -f Dockerfile.cloud \
-        --build-arg REACT_APP_AUDIO_TEXT_API_URL_ENV="${API_URL}" \
-        --build-arg REACT_APP_AUDIO_TEXT_WS_URL_ENV="${WS_URL}" \
+        --build-arg VITE_AUDIO_TEXT_API_URL_ENV="${API_URL}" \
+        --build-arg VITE_AUDIO_TEXT_WS_URL_ENV="${WS_URL}" \
         --build-arg PUBLIC_URL="${PUBLIC_URL}" \
         -t ${DOCKER_IMAGE}:cloud .
 

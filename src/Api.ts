@@ -1,9 +1,9 @@
 import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 // Get API URL from environment variable or use default
-// React requires REACT_APP_ prefix, so we map from our AUDIO_TEXT_ vars
-const API_BASE_URL = process.env.REACT_APP_AUDIO_TEXT_API_URL_ENV || 'http://localhost:3203';
-const WS_BASE_URL = process.env.REACT_APP_AUDIO_TEXT_WS_URL_ENV || 'ws://localhost:3203';
+// Vite requires VITE_ prefix for environment variables
+const API_BASE_URL = import.meta.env.VITE_AUDIO_TEXT_API_URL_ENV || 'http://localhost:3203';
+const WS_BASE_URL = import.meta.env.VITE_AUDIO_TEXT_WS_URL_ENV || 'ws://localhost:3203';
 
 // Create axios instance with default config
 const api = axios.create({

@@ -16,13 +16,11 @@ import Api from '../Api';
 import './AudioTranscription.css';
 import { TranscriptionJob, WhisperModel, JobStatus, AppSettings } from '../types';
 import { useTranscription } from '../hooks';
-import {
-  FileUpload,
-  TranscriptionProgress,
-  TranscriptionResults,
-  EmailModal,
-  DonationSection,
-} from './AudioTranscription/';
+import { FileUpload } from './AudioTranscription/FileUpload';
+import { TranscriptionProgress } from './AudioTranscription/TranscriptionProgress';
+import { TranscriptionResults } from './AudioTranscription/TranscriptionResults';
+import { EmailModal } from './AudioTranscription/EmailModal';
+import { DonationSection } from './AudioTranscription/DonationSection';
 
 // Job status constants matching backend
 const JOB_STATUS: Record<string, JobStatus> = {

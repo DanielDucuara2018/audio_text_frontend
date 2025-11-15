@@ -28,8 +28,8 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 3202
 
-# Start the development server
-CMD ["npm", "start"]
+# Start the Vite development server
+CMD ["npm", "run", "dev"]
 
 # ============================================================================
 # BUILDER STAGE - Build production static files
