@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import {
   setCurrentJob,
@@ -17,11 +17,13 @@ import { useTranscription, useJobRecovery, useJobActions } from '../hooks';
 import { FileUpload } from './AudioTranscription/FileUpload';
 import { TranscriptionProgress } from './AudioTranscription/TranscriptionProgress';
 import { TranscriptionResults } from './AudioTranscription/TranscriptionResults';
-import { EmailModal } from './AudioTranscription/EmailModal';
 import { DonationSection } from './AudioTranscription/DonationSection';
 import { JobHistory } from './AudioTranscription/JobHistory';
 import { Header } from './AudioTranscription/Header';
 import { FailedState } from './AudioTranscription/FailedState';
+
+// Lazy load EmailModal since it's rarely used
+const EmailModal = lazy(() => import('./AudioTranscription/EmailModal').then(module => ({ default: module.EmailModal })));
 
 // Job status constants matching backend
 const JOB_STATUS: Record<string, JobStatus> = {
@@ -127,22 +129,41 @@ const AudioTranscription = ({
   }, [currentJob]);
 
   // Handle file selection
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     const file = files[0];
     await transcription.selectFile(file);
-  };
+  }, [transcription]);
 
   // Update settings
-  const handleSettingsChange = (key: keyof AppSettings, value: any) => {
+  const handleSettingsChange = useCallback((key: keyof AppSettings, value: any) => {
     setSettings({ ...settings, [key]: value });
-  };
+  }, [settings, setSettings]);
 
   // Computed states
-  const isProcessing = currentJob && [JOB_STATUS.PENDING, JOB_STATUS.PROCESSING].includes(currentJob.status);
-  const isCompleted = currentJob && currentJob.status === JOB_STATUS.COMPLETED;
-  const isFailed = currentJob && currentJob.status === JOB_STATUS.FAILED;
+  const isProcessing = useMemo(
+    () => currentJob && [JOB_STATUS.PENDING, JOB_STATUS.PROCESSING].includes(currentJob.status),
+    [currentJob]
+  );
+  const isCompleted = useMemo(
+    () => currentJob && currentJob.status === JOB_STATUS.COMPLETED,
+    [currentJob]
+  );
+  const isFailed = useMemo(
+    () => currentJob && currentJob.status === JOB_STATUS.FAILED,
+    [currentJob]
+  );
+
+  // Dark mode toggle handler
+  const handleToggleDarkMode = useCallback(() => {
+    setDarkMode(!darkMode);
+  }, [darkMode]);
+
+  // Donation toggle handler
+  const handleToggleDonation = useCallback(() => {
+    setShowDonation(!showDonation);
+  }, [showDonation]);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-4 sm:py-8 px-2 sm:px-4 transition-colors duration-300">
@@ -151,13 +172,13 @@ const AudioTranscription = ({
         <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 md:p-8 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
           <Header
             darkMode={darkMode}
-            onToggleDarkMode={() => setDarkMode(!darkMode)}
+            onToggleDarkMode={handleToggleDarkMode}
           />
 
           {/* Donation Section */}
           <DonationSection
             showDonation={showDonation}
-            onToggle={() => setShowDonation(!showDonation)}
+            onToggle={handleToggleDonation}
           />
 
           {/* Error Message */}
@@ -232,11 +253,13 @@ const AudioTranscription = ({
 
         {/* Email Modal */}
         {showEmailModal && currentJob && (
-          <EmailModal
-            jobId={currentJob.id}
-            onClose={() => setShowEmailModal(false)}
-            onError={setError}
-          />
+          <Suspense fallback={<div className="text-center py-4">Loading...</div>}>
+            <EmailModal
+              jobId={currentJob.id}
+              onClose={() => setShowEmailModal(false)}
+              onError={setError}
+            />
+          </Suspense>
         )}
       </div>
     </div>

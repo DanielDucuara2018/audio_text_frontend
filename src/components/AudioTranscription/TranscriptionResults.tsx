@@ -8,7 +8,7 @@ interface TranscriptionResultsProps {
   onStartNew: () => void;
 }
 
-export const TranscriptionResults: React.FC<TranscriptionResultsProps> = ({
+export const TranscriptionResults: React.FC<TranscriptionResultsProps> = React.memo(({
   currentJob,
   onDownload,
   onCopy,
@@ -129,4 +129,4 @@ export const TranscriptionResults: React.FC<TranscriptionResultsProps> = ({
       </div>
     </div>
   );
-};
+});

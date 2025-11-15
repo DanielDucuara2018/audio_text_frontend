@@ -15,7 +15,7 @@ const JOB_STATUS: Record<string, JobStatus> = {
   FAILED: 'failed' as JobStatus
 };
 
-export const JobHistory: React.FC<JobHistoryProps> = ({
+export const JobHistory: React.FC<JobHistoryProps> = React.memo(({
   jobHistory,
   isProcessing,
   onViewJob,
@@ -98,4 +98,4 @@ export const JobHistory: React.FC<JobHistoryProps> = ({
       </div>
     </div>
   );
-};
+});

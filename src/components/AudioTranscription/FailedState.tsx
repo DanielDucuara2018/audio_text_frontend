@@ -5,7 +5,7 @@ interface FailedStateProps {
   onTryAgain: () => void;
 }
 
-export const FailedState: React.FC<FailedStateProps> = ({ errorMessage, onTryAgain }) => {
+export const FailedState: React.FC<FailedStateProps> = React.memo(({ errorMessage, onTryAgain }) => {
   return (
     <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-8 text-center space-y-4 animate-slide-up">
       <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/40 mb-2">
@@ -32,4 +32,4 @@ export const FailedState: React.FC<FailedStateProps> = ({ errorMessage, onTryAga
       </button>
     </div>
   );
-};
+});

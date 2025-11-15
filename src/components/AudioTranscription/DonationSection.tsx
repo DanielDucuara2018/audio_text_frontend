@@ -7,7 +7,7 @@ interface DonationSectionProps {
 
 const BITCOIN_ADDRESS = 'bc1qngl88gth8ufqjx8v9fdx2xdslcvkdnztccn5h3';
 
-export const DonationSection: React.FC<DonationSectionProps> = ({
+export const DonationSection: React.FC<DonationSectionProps> = React.memo(({
   showDonation,
   onToggle,
 }) => {
@@ -114,4 +114,4 @@ export const DonationSection: React.FC<DonationSectionProps> = ({
       )}
     </div>
   );
-};
+});

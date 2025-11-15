@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import viteTsconfigPaths from 'vite-tsconfig-paths'
+import { visualizer } from 'rollup-plugin-visualizer'
+import type { PluginOption } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -10,7 +12,14 @@ export default defineConfig({
   
   plugins: [
     react(),
-    viteTsconfigPaths()
+    viteTsconfigPaths(),
+    // Bundle analyzer - only in analyze mode
+    ...(process.env.ANALYZE ? [visualizer({
+      filename: './build/stats.html',
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
+    }) as PluginOption] : []),
   ],
   server: {
     port: 3202,
@@ -27,11 +36,18 @@ export default defineConfig({
     outDir: 'build',
     sourcemap: false,
     rollupOptions: {
+      input: {
+        main: '/index.html',
+        sw: '/src/service-worker.ts',
+      },
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'redux-vendor': ['redux', 'react-redux', 'redux-persist'],
-        }
+        },
+        entryFileNames: (chunkInfo) => {
+          return chunkInfo.name === 'sw' ? 'service-worker.js' : 'assets/[name]-[hash].js';
+        },
       }
     }
   },

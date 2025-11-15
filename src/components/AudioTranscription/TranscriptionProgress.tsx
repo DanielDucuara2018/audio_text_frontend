@@ -7,7 +7,7 @@ interface TranscriptionProgressProps {
   onCancel: () => void;
 }
 
-export const TranscriptionProgress: React.FC<TranscriptionProgressProps> = ({
+export const TranscriptionProgress: React.FC<TranscriptionProgressProps> = React.memo(({
   currentJob,
   uploadProgress,
   onCancel,
@@ -127,4 +127,4 @@ export const TranscriptionProgress: React.FC<TranscriptionProgressProps> = ({
       </div>
     </div>
   );
-};
+});

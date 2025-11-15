@@ -21,7 +21,7 @@ const WHISPER_MODELS: Array<{ value: WhisperModel; label: string; description: s
   // { value: 'turbo', label: 'Turbo', description: 'Fast, optimized' }
 ];
 
-export const FileUpload: React.FC<FileUploadProps> = ({
+export const FileUpload: React.FC<FileUploadProps> = React.memo(({
   selectedFile,
   audioPreviewUrl,
   settings,
@@ -171,4 +171,4 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       )}
     </div>
   );
-};
+});

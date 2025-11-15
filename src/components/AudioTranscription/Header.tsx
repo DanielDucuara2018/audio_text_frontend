@@ -5,7 +5,7 @@ interface HeaderProps {
   onToggleDarkMode: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ darkMode, onToggleDarkMode }) => {
+export const Header: React.FC<HeaderProps> = React.memo(({ darkMode, onToggleDarkMode }) => {
   return (
     <>
       {/* Dark Mode Toggle */}
@@ -45,4 +45,4 @@ export const Header: React.FC<HeaderProps> = ({ darkMode, onToggleDarkMode }) =>
       </div>
     </>
   );
-};
+});
