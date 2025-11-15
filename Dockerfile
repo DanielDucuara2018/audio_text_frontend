@@ -20,7 +20,7 @@ COPY package*.json ./
 FROM base AS dev
 
 # Install all dependencies (including devDependencies)
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -29,7 +29,7 @@ COPY . .
 EXPOSE 3202
 
 # Start the development server
-CMD ["npm", "run", "start"]
+CMD ["npm", "start"]
 
 # ============================================================================
 # BUILDER STAGE - Build production static files

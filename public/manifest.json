@@ -1,6 +1,8 @@
 {
   "short_name": "VoiceIA",
   "name": "VoiceIA - Audio to Text Transcription",
+  "description": "AI-powered audio to text transcription using OpenAI Whisper. Convert audio files to text instantly.",
+  "categories": ["productivity", "utilities", "business"],
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +12,44 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#667eea",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-US",
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "New Transcription",
+      "short_name": "New",
+      "description": "Start a new audio transcription",
+      "url": "/",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "audio",
+          "accept": ["audio/*", ".mp3", ".wav", ".m4a", ".flac", ".ogg", ".aac", ".mp4", ".opus"]
+        }
+      ]
+    }
+  }
 }

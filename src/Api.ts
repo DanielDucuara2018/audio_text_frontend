@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 // Get API URL from environment variable or use default
 // React requires REACT_APP_ prefix, so we map from our AUDIO_TEXT_ vars
@@ -16,11 +16,11 @@ const api = axios.create({
 
 // Add request interceptor for debugging
 api.interceptors.request.use(
-  (config) => {
+  (config: InternalAxiosRequestConfig) => {
     console.log(`Making ${config.method?.toUpperCase()} request to ${config.url}`);
     return config;
   },
-  (error) => {
+  (error: AxiosError) => {
     console.error('Request error:', error);
     return Promise.reject(error);
   }
@@ -28,10 +28,10 @@ api.interceptors.request.use(
 
 // Add response interceptor for error handling
 api.interceptors.response.use(
-  (response) => {
+  (response: AxiosResponse) => {
     return response;
   },
-  (error) => {
+  (error: AxiosError) => {
     console.error('Response error:', error.response?.data || error.message);
 
     // Handle specific error cases
@@ -50,7 +50,7 @@ api.interceptors.response.use(
 );
 
 // Export WebSocket URL for use in other components
-export const getWebSocketUrl = (path) => `${WS_BASE_URL}/api/v1${path}`;
+export const getWebSocketUrl = (path: string) => `${WS_BASE_URL}/api/v1${path}`;
 
 export default api;
 

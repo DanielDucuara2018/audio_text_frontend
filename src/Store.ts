@@ -2,6 +2,7 @@ import { createStore } from 'redux';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage'; 
 import appReducer from './reducers/appReducer';
+import { composeWithDevTools } from '@redux-devtools/extension';
 
 // Configuration object for redux-persist - only persist essential data
 const persistConfig = {
@@ -15,7 +16,7 @@ const persistedReducer = persistReducer(persistConfig, appReducer);
 
 const store = createStore(
   persistedReducer,
-  window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+  composeWithDevTools()
 );
 
 const persistor = persistStore(store);

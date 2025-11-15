@@ -9,8 +9,22 @@ import {
   REMOVE_JOB_FROM_HISTORY,
   VIEW_JOB_RESULT,
 } from '../actions/appActions';
+import { TranscriptionJob, AppSettings, WhisperModel } from '../types';
+import { UnknownAction } from 'redux';
 
-const initialState = {
+interface AppState {
+  currentJob: TranscriptionJob | null;
+  jobs: TranscriptionJob[];
+  settings: AppSettings;
+  error: string | null;
+}
+
+interface AppAction extends UnknownAction {
+  type: string;
+  payload?: any;
+}
+
+const initialState: AppState = {
   // Current active job
   currentJob: null,
   
@@ -19,14 +33,14 @@ const initialState = {
   
   // User settings (persisted)
   settings: {
-    whisperModel: 'base',
+    whisperModel: 'base' as WhisperModel,
   },
   
   // UI state (not persisted)
   error: null,
 };
 
-const appReducer = (state = initialState, action) => {
+const appReducer = (state: AppState = initialState, action: AppAction): AppState => {
   switch (action.type) {
     case SET_CURRENT_JOB:
       return {

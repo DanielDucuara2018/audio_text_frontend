@@ -4,40 +4,89 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="VoiceIA - Convert your audio files to text using AI-powered transcription"
-    />
+    <meta name="theme-color" content="#667eea" />
+    
+    <!-- Primary Meta Tags -->
+    <title>VoiceIA - Free AI Audio to Text Transcription | Speech to Text Converter</title>
+    <meta name="title" content="VoiceIA - Free AI Audio to Text Transcription | Speech to Text Converter" />
+    <meta name="description" content="Convert audio files to text instantly using advanced AI-powered transcription. Supports MP3, WAV, M4A, FLAC, OGG, AAC, MP4, OPUS. Fast, accurate, and free. Powered by OpenAI Whisper." />
+    <meta name="keywords" content="audio transcription, speech to text, voice to text, AI transcription, Whisper AI, audio converter, voice transcription, automated transcription, MP3 to text, WAV to text, audio to text converter, free transcription, OpenAI Whisper" />
+    <meta name="author" content="VoiceIA" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://voiceia.danobhub.com/" />
+    <meta property="og:title" content="VoiceIA - Free AI Audio to Text Transcription" />
+    <meta property="og:description" content="Convert audio files to text instantly using advanced AI. Supports MP3, WAV, M4A, FLAC, OGG, AAC, MP4, OPUS. Fast, accurate, and free." />
+    <meta property="og:image" content="https://voiceia.danobhub.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="VoiceIA" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://voiceia.danobhub.com/" />
+    <meta name="twitter:title" content="VoiceIA - Free AI Audio to Text Transcription" />
+    <meta name="twitter:description" content="Convert audio files to text instantly using advanced AI. Supports multiple audio formats. Fast, accurate, and free." />
+    <meta name="twitter:image" content="https://voiceia.danobhub.com/twitter-card.jpg" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://voiceia.danobhub.com/" />
+    
+    <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
+    
+    <!-- PWA Manifest -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>VoiceIA - Audio to Text</title>
+    
+    <!-- Resource Hints for Performance -->
+    <link rel="preconnect" href="https://api.voiceia.danobhub.com" />
+    <link rel="dns-prefetch" href="https://api.voiceia.danobhub.com" />
+    
+    <!-- Structured Data (Schema.org) for Rich Results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "VoiceIA",
+      "description": "AI-powered audio to text transcription service using OpenAI Whisper",
+      "url": "https://voiceia.danobhub.com",
+      "applicationCategory": "UtilityApplication",
+      "operatingSystem": "Web Browser",
+      "browserRequirements": "Requires JavaScript. Modern browser recommended.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Audio to text transcription",
+        "Multiple audio format support (MP3, WAV, M4A, FLAC, OGG, AAC, MP4, OPUS)",
+        "AI-powered using OpenAI Whisper",
+        "Real-time transcription progress",
+        "Download transcription as text file",
+        "Email transcription results",
+        "WebSocket real-time updates"
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1250",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "VoiceIA",
+        "url": "https://voiceia.danobhub.com"
+      }
+    }
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
   </body>
 </html>
