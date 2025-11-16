@@ -14,13 +14,15 @@ interface UseTranscriptionOptions {
   onJobCreated: (job: TranscriptionJob) => void;
   onJobUpdated: (jobUpdate: Partial<TranscriptionJob>) => void;
   onError?: (error: string) => void;
+  currentJob?: TranscriptionJob | null;
 }
 
 export const useTranscription = ({
   whisperModel,
   onJobCreated,
   onJobUpdated,
-  onError
+  onError,
+  currentJob
 }: UseTranscriptionOptions) => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -31,7 +33,8 @@ export const useTranscription = ({
 
   const webSocket = useWebSocket({
     onJobUpdate: onJobUpdated,
-    onError
+    onError,
+    currentJob
   });
 
   const startTranscription = useCallback(async () => {

@@ -61,6 +61,7 @@ const AudioTranscription = ({
   // Use the custom transcription hook
   const transcription = useTranscription({
     whisperModel: settings.whisperModel,
+    currentJob,
     onJobCreated: (job: TranscriptionJob) => {
       setCurrentJob(job);
       addJobToHistory(job);

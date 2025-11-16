@@ -41,17 +41,17 @@ export const useJobRecovery = ({
 
         const updatedJob: Partial<TranscriptionJob> = {
           id: currentJob.id,
-          status: jobData.status,
-          result: jobData.result,
-          processingTime: jobData.processing_time,
+          status: jobData.status as JobStatus,
+          result: jobData.result_text,
+          error: jobData.error_message,
+          processingTime: jobData.processing_time_seconds,
           language: jobData.language,
           languageProbability: jobData.language_probability,
-          downloadUrl: jobData.download_url || '',
-          downloadFilename: jobData.download_filename || `${currentJob.filename}_transcription.txt`,
+          whisperModel: jobData.whisper_model,
         };
 
         if (jobData.status === JOB_STATUS.COMPLETED || jobData.status === JOB_STATUS.FAILED) {
-          updatedJob.completedAt = new Date().toISOString();
+          updatedJob.completedAt = jobData.update_date || new Date().toISOString();
         }
 
         onJobUpdate(updatedJob);

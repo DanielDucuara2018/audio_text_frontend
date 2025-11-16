@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
-import { getWebSocketUrl } from '../Api';
+import Api, { getWebSocketUrl } from '../Api';
 import { JobStatus, TranscriptionJob } from '../types';
 
 interface WebSocketMessage {
@@ -21,9 +21,10 @@ interface WebSocketMessage {
 interface UseWebSocketOptions {
   onJobUpdate: (jobUpdate: Partial<TranscriptionJob>) => void;
   onError?: (error: string) => void;
+  currentJob?: TranscriptionJob | null;
 }
 
-export const useWebSocket = ({ onJobUpdate, onError }: UseWebSocketOptions) => {
+export const useWebSocket = ({ onJobUpdate, onError, currentJob }: UseWebSocketOptions) => {
   const websocketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentJobIdRef = useRef<string | null>(null);
@@ -127,12 +128,42 @@ export const useWebSocket = ({ onJobUpdate, onError }: UseWebSocketOptions) => {
           }
         };
 
-        ws.onclose = (event) => {
+        ws.onclose = async (event) => {
           console.log('WebSocket closed:', event.code, event.reason);
           websocketRef.current = null;
 
+          // If WebSocket closed normally (code 1000) after job completion,
+          // fetch the final complete data from API endpoint
+          if (event.code === 1000 && currentJobIdRef.current) {
+            try {
+              console.log('Job completed, fetching final status from API...');
+              const response = await Api.get(`/job/status/${currentJobIdRef.current}`);
+              const jobData = response.data;
+
+              const finalJobUpdate: Partial<TranscriptionJob> = {
+                id: currentJobIdRef.current,
+                status: jobData.status as JobStatus,
+                result: jobData.result_text || currentJob?.result,
+                error: jobData.error_message,
+                processingTime: jobData.processing_time_seconds,
+                language: jobData.language,
+                languageProbability: jobData.language_probability,
+                whisperModel: jobData.whisper_model,
+                completedAt: jobData.update_date || new Date().toISOString(),
+              };
+
+              onJobUpdate(finalJobUpdate);
+              console.log('Final job data fetched from API:', finalJobUpdate);
+            } catch (error) {
+              console.error('Failed to fetch final job status:', error);
+              if (onError) {
+                onError('Failed to fetch final transcription result');
+              }
+            }
+            currentJobIdRef.current = null; // Clear job ID after completion
+          }
           // Attempt to reconnect for non-terminal closures (unless manually closed)
-          if (event.code !== 1000 && currentJobIdRef.current) {
+          else if (event.code !== 1000 && currentJobIdRef.current) {
             console.log('Attempting to reconnect in 3 seconds...');
             reconnectTimeoutRef.current = setTimeout(() => {
               if (currentJobIdRef.current) {
