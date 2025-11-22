@@ -119,5 +119,8 @@ export const useTranscription = ({
     
     // WebSocket state
     isConnected: webSocket.isConnected,
+
+    // WebSocket actions
+    reconnectWebSocket: webSocket.connect,
   };
 };

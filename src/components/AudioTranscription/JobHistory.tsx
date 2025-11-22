@@ -32,9 +32,13 @@ export const JobHistory: React.FC<JobHistoryProps> = React.memo(({
           <path d="M13.5,8H12V13L16.28,15.54L17,14.33L13.5,12.25V8M13,3A9,9 0 0,0 4,12H1L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3" />
         </svg>
         Recent Jobs
+        <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+          ({jobHistory.length})
+        </span>
       </h3>
-      <div className="grid gap-3 sm:gap-4">
-        {jobHistory.slice(0, 10).map((job: TranscriptionJob) => (
+      <div className="max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="grid gap-3 sm:gap-4">
+          {jobHistory.map((job: TranscriptionJob) => (
           <div
             key={job.id}
             className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 
@@ -95,6 +99,7 @@ export const JobHistory: React.FC<JobHistoryProps> = React.memo(({
             </div>
           </div>
         ))}
+        </div>
       </div>
     </div>
   );

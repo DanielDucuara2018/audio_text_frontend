@@ -29,6 +29,15 @@ export const useWebSocket = ({ onJobUpdate, onError, currentJob }: UseWebSocketO
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentJobIdRef = useRef<string | null>(null);
 
+  // Use refs to avoid stale closures in callbacks
+  const onJobUpdateRef = useRef(onJobUpdate);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onJobUpdateRef.current = onJobUpdate;
+    onErrorRef.current = onError;
+  }, [onJobUpdate, onError]);
+
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
@@ -100,7 +109,7 @@ export const useWebSocket = ({ onJobUpdate, onError, currentJob }: UseWebSocketO
                 jobUpdate.completedAt = new Date().toISOString();
               }
 
-              onJobUpdate(jobUpdate);
+              onJobUpdateRef.current(jobUpdate);
 
               // Close WebSocket for terminal states
               if (data.status === 'completed' || data.status === 'failed') {
@@ -112,8 +121,8 @@ export const useWebSocket = ({ onJobUpdate, onError, currentJob }: UseWebSocketO
             // Handle error messages
             if (data.type === 'error') {
               console.error('WebSocket error:', data.error);
-              if (onError && data.error) {
-                onError(data.error);
+              if (onErrorRef.current && data.error) {
+                onErrorRef.current(data.error);
               }
             }
           } catch (error) {
@@ -123,8 +132,8 @@ export const useWebSocket = ({ onJobUpdate, onError, currentJob }: UseWebSocketO
 
         ws.onerror = (error) => {
           console.error('WebSocket error:', error);
-          if (onError) {
-            onError('WebSocket connection error');
+          if (onErrorRef.current) {
+            onErrorRef.current('WebSocket connection error');
           }
         };
 
@@ -152,12 +161,12 @@ export const useWebSocket = ({ onJobUpdate, onError, currentJob }: UseWebSocketO
                 completedAt: jobData.update_date || new Date().toISOString(),
               };
 
-              onJobUpdate(finalJobUpdate);
+              onJobUpdateRef.current(finalJobUpdate);
               console.log('Final job data fetched from API:', finalJobUpdate);
             } catch (error) {
               console.error('Failed to fetch final job status:', error);
-              if (onError) {
-                onError('Failed to fetch final transcription result');
+              if (onErrorRef.current) {
+                onErrorRef.current('Failed to fetch final transcription result');
               }
             }
             currentJobIdRef.current = null; // Clear job ID after completion
@@ -174,12 +183,12 @@ export const useWebSocket = ({ onJobUpdate, onError, currentJob }: UseWebSocketO
         };
       } catch (error) {
         console.error('Failed to create WebSocket connection:', error);
-        if (onError) {
-          onError('Failed to establish WebSocket connection');
+        if (onErrorRef.current) {
+          onErrorRef.current('Failed to establish WebSocket connection');
         }
       }
     }, 100);
-  }, [disconnect, onJobUpdate, onError]);
+  }, [disconnect]);
 
   // Cleanup on unmount
   useEffect(() => {

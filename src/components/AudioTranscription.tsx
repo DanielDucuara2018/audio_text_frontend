@@ -79,7 +79,8 @@ const AudioTranscription = ({
     currentJob,
     onJobUpdate: updateJobStatus,
     onError: setError,
-    onClearJob: clearCurrentJob
+    onClearJob: clearCurrentJob,
+    onReconnectWebSocket: transcription.reconnectWebSocket
   });
 
   // Use job actions hook
@@ -231,6 +232,7 @@ const AudioTranscription = ({
               currentJob={currentJob}
               onDownload={jobActions.downloadTranscription}
               onCopy={jobActions.copyToClipboard}
+              onEmail={() => setShowEmailModal(true)}
               onStartNew={jobActions.startNew}
             />
           )}
@@ -258,7 +260,6 @@ const AudioTranscription = ({
             <EmailModal
               jobId={currentJob.id}
               onClose={() => setShowEmailModal(false)}
-              onError={setError}
             />
           </Suspense>
         )}

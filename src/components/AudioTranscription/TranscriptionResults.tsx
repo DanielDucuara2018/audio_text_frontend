@@ -5,6 +5,7 @@ interface TranscriptionResultsProps {
   currentJob: TranscriptionJob;
   onDownload: () => void;
   onCopy: () => void;
+  onEmail: () => void;
   onStartNew: () => void;
 }
 
@@ -12,6 +13,7 @@ export const TranscriptionResults: React.FC<TranscriptionResultsProps> = React.m
   currentJob,
   onDownload,
   onCopy,
+  onEmail,
   onStartNew,
 }) => {
   const isCompleted = currentJob && currentJob.status === 'completed';
@@ -87,7 +89,7 @@ export const TranscriptionResults: React.FC<TranscriptionResultsProps> = React.m
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" role="group" aria-label="Transcription actions">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" role="group" aria-label="Transcription actions">
         <button 
           onClick={onDownload} 
           className="flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white 
@@ -112,6 +114,19 @@ export const TranscriptionResults: React.FC<TranscriptionResultsProps> = React.m
             <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" />
           </svg>
           Copy Text
+        </button>
+
+        <button
+          onClick={onEmail}
+          className="flex items-center justify-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white 
+                     font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200
+                     transform hover:-translate-y-0.5 active:translate-y-0"
+          aria-label="Send transcription by email"
+        >
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" />
+          </svg>
+          Email
         </button>
 
         <button 

@@ -8,6 +8,7 @@ interface UseJobRecoveryProps {
   onJobUpdate: (jobUpdate: Partial<TranscriptionJob>) => void;
   onError: (error: string) => void;
   onClearJob: () => void;
+  onReconnectWebSocket?: (jobId: string) => void;
 }
 
 const JOB_STATUS: Record<string, JobStatus> = {
@@ -21,7 +22,8 @@ export const useJobRecovery = ({
   currentJob,
   onJobUpdate,
   onError,
-  onClearJob
+  onClearJob,
+  onReconnectWebSocket
 }: UseJobRecoveryProps) => {
   const isRecoveringRef = useRef<boolean>(false);
 
@@ -58,6 +60,7 @@ export const useJobRecovery = ({
 
         if (jobData.status === JOB_STATUS.PENDING || jobData.status === JOB_STATUS.PROCESSING) {
           console.log('Job still processing, reconnecting WebSocket...');
+          onReconnectWebSocket?.(currentJob.id);
         }
       } catch (error) {
         const axiosError = error as AxiosError<{ detail?: string }>;
